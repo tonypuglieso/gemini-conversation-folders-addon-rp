@@ -36,6 +36,19 @@ export default class Component {
     create() {
         const html = this.render();
         const styles = this.getStyles();
+        
+        // --- Trusted Types Support (Chrome Dev / Gemini Security) ---
+        let policy = { createHTML: (h) => h };
+        if (window.trustedTypes && window.trustedTypes.createPolicy) {
+            try {
+                // Try to use or create a policy to bypass TrustedHTML restrictions
+                policy = window.trustedTypes.createPolicy('gemini-organizer-policy', {
+                    createHTML: (string) => string
+                }) || policy;
+            } catch (e) {
+                // Policy might already exist or be restricted
+            }
+        }
 
         if (this.useShadow) {
             if (!this.element) {
@@ -44,17 +57,35 @@ export default class Component {
                 this.shadowRoot = this.element.attachShadow({ mode: 'open' });
             }
 
-            this.shadowRoot.innerHTML = `
-                <style>${styles}</style>
-                ${html.trim()}
-            `;
+            const parser = new DOMParser();
+            const doc = parser.parseFromString(`<div><style>${styles}</style>${html.trim()}</div>`, 'text/html');
+            const container = doc.body.firstElementChild;
+            
+            // Limpiar shadowRoot de forma segura
+            while (this.shadowRoot.firstChild) {
+                this.shadowRoot.removeChild(this.shadowRoot.firstChild);
+            }
+
+            if (container) {
+                const fragment = document.createDocumentFragment();
+                for (const child of container.childNodes) {
+                    fragment.appendChild(this._cloneNodeSafe(child));
+                }
+                this.shadowRoot.appendChild(fragment);
+            }
         } else {
-            const tempDiv = document.createElement('div');
-            tempDiv.innerHTML = html.trim();
-            this.element = tempDiv.firstElementChild;
+            const template = document.createElement('template');
+            template.innerHTML = html.trim();
+            this.element = template.content.firstElementChild;
         }
 
-        this.afterRender();
+        if (this.element) {
+            try {
+                this.afterRender();
+            } catch (e) {
+                console.error(`Gemini Organizer: Error en afterRender de ${this.constructor.name}:`, e);
+            }
+        }
         return this.element;
     }
 
@@ -101,11 +132,45 @@ export default class Component {
     }
 
     /**
+     * Safely sets innerHTML using Trusted Types if available.
+     * @param {HTMLElement} el 
+     * @param {string} html 
+     */
+    setSafeHTML(el, html) {
+        if (!el || html == null) return;
+        
+        let policy = { createHTML: (h) => h };
+        if (window.trustedTypes && window.trustedTypes.createPolicy) {
+            try {
+                policy = window.trustedTypes.getPolicies().find(p => p.name === 'gemini-organizer-policy') ||
+                         window.trustedTypes.createPolicy('gemini-organizer-policy', {
+                            createHTML: (string) => string
+                         });
+            } catch (e) {}
+        }
+
+        try {
+            el.innerHTML = policy.createHTML(html);
+        } catch (e) {
+            // Fallback for strict CSP/Trusted Types: direct DOM move
+            // We use removeChild to clear the element to avoid another Trusted Types trigger
+            while (el.firstChild) {
+                el.removeChild(el.firstChild);
+            }
+            const parser = new DOMParser();
+            const doc = parser.parseFromString(html, 'text/html');
+            while (doc.body.firstChild) {
+                el.appendChild(doc.body.firstChild);
+            }
+        }
+    }
+
+    /**
      * Mounts the component to a parent container.
      * @param {HTMLElement} container 
      */
     mount(container) {
         const el = this.create();
-        container.appendChild(el);
+        if (el) container.appendChild(el);
     }
 }

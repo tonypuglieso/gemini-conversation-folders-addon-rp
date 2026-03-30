@@ -15,10 +15,11 @@ graph TD
     App --> FolderManager["Folder Manager"]
 
     UI --> GeminiAdapter["Gemini Adapter"]
-    UI --> Sidebar["Sidebar Component"]
-    UI --> FolderList["Folder List Component"]
+    UI --> Sidebar["Sidebar Component (Panel original)"]
+    UI --> RightPanel["RightPanel Component (Nuevo panel lateral)"]
 
-    FolderList --> ConversationList["Conversation List Component"]
+    Sidebar --> FolderList["FolderList Component"]
+    FolderList --> ConversationList["ConversationList Component"]
 
     FolderManager --> Storage
 
@@ -26,6 +27,7 @@ graph TD
         Component["Base Component Class"]
     end
 
+    RightPanel -- extends --> Component
     Sidebar -- extends --> Component
     FolderList -- extends --> Component
     ConversationList -- extends --> Component

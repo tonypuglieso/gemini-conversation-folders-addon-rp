@@ -1,6 +1,7 @@
 import Component from '../core/Component.js';
 import AuthService from '../services/AuthService.js';
 import { showToast } from '../utils.js';
+import ManualEmojiPicker from './ManualEmojiPicker.js';
 
 export default class RightPanel extends Component {
     constructor(props = {}) {
@@ -9,7 +10,7 @@ export default class RightPanel extends Component {
         this.currentFolderView = null;
         this.isBulkMode = false;
         this.selectedConvIds = new Set();
-        this.settings = { density: 'standard', panelWidth: 340, foldersHeight: 38 };
+        this.settings = { density: 'compact', panelWidth: 340, foldersHeight: 40 };
         this.auth = new AuthService();
         this.user = null;
         this.lastData = { folders: {}, conversations: [] };
@@ -33,7 +34,8 @@ export default class RightPanel extends Component {
             plus: `<svg viewBox="0 0 24 24" ${s}><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>`,
             moreVert: `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 8c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm0 2c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm0 6c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2z"></path></svg>`,
             select: `<svg viewBox="0 0 24 24" ${s}><polyline points="9 11 12 14 22 4"></polyline><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"></path></svg>`,
-            settings: `<svg viewBox="0 0 24 24" ${s}><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>`
+            settings: `<svg viewBox="0 0 24 24" ${s}><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>`,
+            tools: `<svg viewBox="0 0 24 24" ${s}><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"></path></svg>`
         };
 
 
@@ -41,11 +43,19 @@ export default class RightPanel extends Component {
 
         // Bind methods
         this.toggle = this.toggle.bind(this);
+        this.showEditChatPanel = this.showEditChatPanel.bind(this);
+        this.showDeleteChatPanel = this.showDeleteChatPanel.bind(this);
+        this.showDeleteTagPanel = this.showDeleteTagPanel.bind(this);
+        this.showDataManagementPanel = this.showDataManagementPanel.bind(this);
         this.dragAndDropHandler = null;
     }
 
     setDragAndDropHandler(handler) {
         this.dragAndDropHandler = handler;
+    }
+
+    getVisiblePanelElement() {
+        return this.element?.querySelector('#gemini-organizer-right-panel') || this.element;
     }
 
 
@@ -55,88 +65,242 @@ export default class RightPanel extends Component {
 
     render() {
         return `
-            <div id="gemini-organizer-right-panel" class="hidden">
-                <div class="right-panel-resizer" id="right-panel-resizer"></div>
-                
-                <div class="panel-container">
-                    <!-- Header with Home & Search -->
-                    <div class="right-panel-header">
-                        <button class="header-btn" id="right-back-btn" title="Volver al inicio">
-                            ${this.svg.home}
-                        </button>
-                        <div class="header-search-container">
-                            <span class="mini-search-icon">${this.svg.search}</span>
-                            <input type="search" id="right-panel-search" placeholder="Buscar conversaciones...">
-                        </div>
-                        <div class="header-actions">
-                            <button class="header-btn" id="right-settings-btn" title="Configuración">
-                                ${this.svg.settings}
-                            </button>
-                            <button class="header-btn" id="close-right-panel" title="Cerrar panel">
-                                ${this.svg.chevronRight}
-                            </button>
-                        </div>
-                    </div>
-
-
-
-                    <div class="panel-content" id="right-panel-content-area">
-                        <!-- CARPETAS SECTION -->
-                        <div class="section-group" id="folders-main-container">
-                            <div class="section-header-row">
-                                <h2 class="section-title">Carpetas <span class="inline-add" id="right-add-folder-btn" title="Nueva Carpeta">+</span></h2>
-                            </div>
-                            <div class="folders-grid" id="right-folders-grid"></div>
-                        </div>
-
-                        <div class="section-divider" id="right-panel-divider"></div>
-
-                         <!-- CONVERSACIONES SECTION -->
-                        <div class="section-group" id="conversations-main-container">
-                            <div id="right-panel-tag-cloud" class="tag-cloud-container"></div>
-                            
-                            <div class="section-header-row">
-                                <h2 class="section-title" id="right-list-title">Recientes</h2>
-                                <div class="convo-header-actions">
-                                    <button class="bulk-toggle-btn" id="right-bulk-toggle" title="Seleccionar varios">
-                                        ${this.svg.select}
-                                    </button>
-                                    <button class="new-chat-btn" id="right-new-chat-folder-btn" style="display: none;">
-                                        ${this.svg.newChat} Nuevo chat
-                                    </button>
-                                </div>
-                            </div>
-                            <ul id="right-all-conversations-list" class="conversation-list"></ul>
-                        </div>
-
-                    </div>
-
-                    <!-- Bulk Action Bar -->
-                    <div id="right-bulk-action-bar" class="bulk-action-bar hidden">
-                        <span id="bulk-selection-count">0 seleccionados</span>
-                        <div class="bulk-bar-actions">
-                            <button class="bulk-move-btn">Mover a...</button>
-                            <button class="bulk-delete-btn danger">Borrar</button>
-                        </div>
-                    </div>
-                </div>
-
-
-                <!-- Floating Toggle Handle -->
+            <div id="gemini-organizer-right-panel-root">
+                <!-- Floating Toggle Handle (Always outside the translate container) -->
                 <div id="gemini-organizer-right-panel-tab" class="drawer-handle">
                     <div class="handle-inner" id="drawer-handle-icon">
                         ${this.svg.chevronLeft}
                     </div>
                 </div>
 
+                <!-- Main Panel Container (This one gets the .hidden class and translates) -->
+                <div id="gemini-organizer-right-panel" class="hidden">
+                    <div class="right-panel-resizer" id="right-panel-resizer"></div>
+                    
+                    <div class="panel-container">
+                        <!-- Header with Home & Search -->
+                        <div class="right-panel-header">
+                            <button class="header-btn" id="right-back-btn" title="Volver al inicio">
+                                ${this.svg.home}
+                            </button>
+                            <div class="header-search-container">
+                                <input type="search" id="right-panel-search" placeholder="Buscar conversaciones...">
+                            </div>
+                                <button class="header-btn" id="right-settings-btn" title="Herramientas y Backup">
+                                    ${this.svg.tools}
+                                </button>
+                            </div>
 
+                        <div class="panel-content" id="right-panel-content-area">
+                            <!-- TAGS BAR -->
+                            <div id="right-tags-bar" class="tags-bar"></div>
 
+                            <!-- CARPETAS SECTION -->
+                            <div class="section-group" id="folders-main-container">
+                                <div class="section-header-row">
+                                    <h2 class="section-title">Carpetas</h2>
+                                    <button class="new-chat-btn" id="right-add-folder-btn" title="Nueva Carpeta">
+                                        ${this.svg.folder} Nueva carpeta
+                                    </button>
+                                    <button class="new-chat-btn primary-btn" id="right-new-chat-btn" title="Nueva Conversación" style="margin-left: 8px; background: var(--rp-accent); color: white;">
+                                        ${this.svg.plus} Nuevo Chat
+                                    </button>
+                                </div>
+                                <div class="folders-grid" id="right-folders-grid"></div>
+                            </div>
+
+                            <div class="section-divider" id="right-panel-divider"></div>
+
+                            <!-- CONVERSACIONES SECTION -->
+                            <div class="section-group" id="conversations-main-container">
+                                <div id="right-panel-tag-cloud" class="tag-cloud-container"></div>
+                                
+                                <div class="section-header-row">
+                                    <h2 class="section-title" id="right-list-title">Recientes</h2>
+                                    <div class="convo-header-actions">
+                                        <button class="bulk-toggle-btn" id="right-bulk-toggle" title="Seleccionar varios">
+                                            ${this.svg.select}
+                                        </button>
+                                        <button class="new-chat-btn" id="right-new-chat-folder-btn" style="display: none;">
+                                            ${this.svg.newChat} Nuevo chat
+                                        </button>
+                                    </div>
+                                </div>
+                                <ul id="right-all-conversations-list" class="conversation-list"></ul>
+                            </div>
+                        </div>
+
+                        <!-- Bulk Action Bar -->
+                        <div id="right-bulk-action-bar" class="bulk-action-bar hidden">
+                            <span id="bulk-selection-count">0 seleccionados</span>
+                            <div class="bulk-bar-actions">
+                                <button class="bulk-move-btn primary">Mover a...</button>
+                                <button class="bulk-remove-btn">Sacar de carpeta</button>
+                                <button class="bulk-delete-btn danger">Borrar</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </div>
         `;
     }
 
     getStyles() {
         return ''; // Styles are in right-panel.css
+    }
+
+    afterRender() {
+        if (!this.element) return;
+        
+        // Handle Sidebar Sync/Onboarding
+        const newChatBtn = this.element.querySelector('#right-new-chat-btn');
+        if (newChatBtn) {
+            newChatBtn.onclick = () => {
+                if (window.geminiOrganizerAppInstance && window.geminiOrganizerAppInstance.geminiAdapter) {
+                    window.geminiOrganizerAppInstance.geminiAdapter.createNewChatNative();
+                }
+            };
+        }
+
+        const backBtn = this.element.querySelector('#right-back-btn');
+        if (backBtn) {
+            backBtn.onclick = () => {
+                this.searchTerm = '';
+                const searchInput = this.element.querySelector('#right-panel-search');
+                if (searchInput) searchInput.value = '';
+                this.currentFolderView = null;
+                this.updateData();
+            };
+        }
+
+        const closeBtn = this.element.querySelector('#close-right-panel');
+        if (closeBtn) closeBtn.onclick = () => this.toggle(false);
+
+        const handle = this.element.querySelector('.drawer-handle');
+        if (handle) {
+            handle.onclick = (e) => {
+                e.stopPropagation();
+                this.toggle();
+            };
+        }
+
+        const toolsBtn = this.element.querySelector('#right-settings-btn');
+        if (toolsBtn) {
+            toolsBtn.onclick = (e) => {
+                e.stopPropagation();
+                this.showSettingsMenu();
+            };
+        }
+
+        const searchInput = this.element.querySelector('#right-panel-search');
+        if (searchInput) {
+            searchInput.oninput = (e) => {
+                this.searchTerm = e.target.value.toLowerCase().trim();
+                this.updateData();
+            };
+        }
+
+        // Bulk Management
+        const bulkBtn = this.element.querySelector('#right-bulk-toggle');
+        if (bulkBtn) {
+            bulkBtn.classList.toggle('active', this.isBulkMode);
+            bulkBtn.onclick = () => {
+                this.isBulkMode = !this.isBulkMode;
+                if (!this.isBulkMode) this.selectedConvIds.clear();
+                this.updateData();
+                this.updateBulkBar();
+            };
+        }
+
+        this.element.querySelectorAll('.bulk-checkbox').forEach(cb => {
+            cb.onchange = () => {
+                const item = cb.closest('.conversation-item');
+                const id = item.dataset.convId;
+                if (cb.checked) {
+                    this.selectedConvIds.add(id);
+                    item.classList.add('selected');
+                } else {
+                    this.selectedConvIds.delete(id);
+                    item.classList.remove('selected');
+                }
+                this.updateBulkBar();
+            };
+        });
+
+        const bulkBar = this.element.querySelector('#right-bulk-action-bar');
+        if (bulkBar) {
+            bulkBar.querySelector('.bulk-move-btn').onclick = () => this.handleBulkMove();
+            bulkBar.querySelector('.bulk-remove-btn').onclick = () => this.handleBulkRemove();
+            bulkBar.querySelector('.bulk-delete-btn').onclick = () => this.handleBulkDelete();
+        }
+
+        const addFolderBtn = this.element.querySelector('#right-add-folder-btn');
+        if (addFolderBtn) {
+            addFolderBtn.onclick = (e) => {
+                e.stopPropagation();
+                this.showEditFolderPanel(null);
+            };
+        }
+
+        // Global Clicks
+        if (!this._globalClickListener) {
+            this._globalClickListener = (e) => {
+                const editPanel = document.querySelector('#folder-edit-panel');
+                const emojiPicker = document.querySelector('#manual-emoji-picker');
+                
+                if (editPanel && !editPanel.contains(e.target) && !e.target.closest('.folder-menu-trigger')) {
+                    editPanel.remove();
+                }
+                if (emojiPicker && !emojiPicker.contains(e.target) && !e.target.closest('#emoji-picker-trigger')) {
+                    emojiPicker.remove();
+                }
+
+                // If user clicks on Gemini main area, close panel if open
+                const geminiMain = document.querySelector('chat-window, main, .conversation-container');
+                if (geminiMain && geminiMain.contains(e.target) && this.isOpen) {
+                    if (!this.element.contains(e.target)) {
+                        this.toggle(false);
+                    }
+                }
+            };
+            document.addEventListener('click', this._globalClickListener);
+        }
+
+        this.initResizers();
+
+        if (this.dragAndDropHandler) {
+            this.element.querySelectorAll('.folder-card:not(.virtual-folder)').forEach(card => {
+                card.ondragover = this.dragAndDropHandler.handleDragOver.bind(this.dragAndDropHandler);
+                card.ondragleave = this.dragAndDropHandler.handleDragLeave.bind(this.dragAndDropHandler);
+                card.ondrop = async (e) => {
+                    await this.dragAndDropHandler.handleDrop(e);
+                    this.updateData();
+                };
+            });
+        }
+    }
+
+    /**
+     * Mounts the component to a parent container.
+     * @param {HTMLElement} container 
+     */
+    mount(container) {
+        console.group("Gemini Organizer: Proceso de Montaje del Panel Derecho");
+        try {
+            const el = this.create();
+            if (!el) {
+                console.error("RightPanel: Fallo crítico: create() no devolvió un elemento.");
+                return;
+            }
+            container.appendChild(el);
+            console.log("RightPanel: Elemento inyectado en:", container.tagName);
+            console.log("RightPanel: Elemento raíz:", el.id);
+            console.log("RightPanel: Estilos calculados iniciales:", window.getComputedStyle(el).display);
+        } catch (e) {
+            console.error("RightPanel: Error durante el montaje:", e);
+        } finally {
+            console.groupEnd();
+        }
     }
 
     async updateData(folders, allUniqueConversations) {
@@ -151,7 +315,7 @@ export default class RightPanel extends Component {
 
         // Update Folder Grid
         if (grid) {
-            grid.innerHTML = '';
+            this.setSafeHTML(grid, '');
             
             // 1. Virtual Folder: Unorganized
             if (window.geminiOrganizerAppInstance && !this.currentFolderView) {
@@ -177,7 +341,7 @@ export default class RightPanel extends Component {
 
         // Update Conversation List
         if (list) {
-            list.innerHTML = '';
+            this.setSafeHTML(list, '');
             let displayConvs = [];
             if (this.currentFolderView === 'Sin Organizar') {
                 displayConvs = window.geminiOrganizerAppInstance.folderManager.getUnorganizedChats();
@@ -214,7 +378,7 @@ export default class RightPanel extends Component {
 
             
             if (displayConvs.length === 0) {
-                list.innerHTML = `<li class="empty-msg">${this.searchTerm ? 'No se encontraron resultados.' : 'Sin chats guardados.'}</li>`;
+                this.setSafeHTML(list, `<li class="empty-msg">${this.searchTerm ? 'No se encontraron resultados.' : 'Sin chats guardados.'}</li>`);
             } else {
                 displayConvs.forEach(conv => {
                     list.appendChild(this.renderConversationItem(conv));
@@ -234,15 +398,15 @@ export default class RightPanel extends Component {
         }
 
         container.style.display = 'flex';
-        container.innerHTML = tags.map(tag => `
+        this.setSafeHTML(container, tags.map(tag => `
             <span class="tag-chip ${this.searchTerm === tag.name ? 'active' : ''}" data-tag="${tag.name}">
                 #${tag.name} <span class="tag-count">${tag.count}</span>
             </span>
-        `).join('');
+        `).join(''));
 
         container.querySelectorAll('.tag-chip').forEach(chip => {
             chip.onclick = () => {
-                const tag = chip.dataset.tag;
+                const tag = chip.dataset.tag.toLowerCase().trim();
                 const input = this.element.querySelector('#right-panel-search');
                 if (this.searchTerm === tag) {
                     this.searchTerm = '';
@@ -268,12 +432,29 @@ export default class RightPanel extends Component {
 
 
 
-        // Extract emoji if present
-        const emojiMatch = folderName.match(/^(\p{Emoji})/u);
-        const emoji = emojiMatch ? emojiMatch[1] : null;
-        const displayName = emoji ? folderName.replace(emoji, '').trim() : folderName;
+        // Extract emoji if present using Intl.Segmenter for complex sequences (e.g., Black Cat 🐈‍⬛)
+        let emoji = null;
+        let displayName = folderName;
+        
+        try {
+            const segmenter = new Intl.Segmenter('en', { granularity: 'grapheme' });
+            const segments = Array.from(segmenter.segment(folderName));
+            
+            if (segments.length > 0) {
+                const firstSegment = segments[0].segment;
+                if (/\p{Emoji}/u.test(firstSegment)) {
+                    emoji = firstSegment;
+                    displayName = folderName.slice(emoji.length).trim();
+                }
+            }
+        } catch (e) {
+            // Fallback for older environments if needed
+            const emojiMatch = folderName.match(/^(\p{Emoji})/u);
+            emoji = emojiMatch ? emojiMatch[1] : null;
+            displayName = emoji ? folderName.replace(emoji, '').trim() : folderName;
+        }
 
-        div.innerHTML = `
+        this.setSafeHTML(div, `
             <div class="folder-icon-wrapper">
                 ${isVirtual ? `<span class="folder-emoji-large">⚡</span>` : (emoji ? `<span class="folder-emoji-large">${emoji}</span>` : `
                 <span class="folder-emoji-large">📂</span>
@@ -281,19 +462,47 @@ export default class RightPanel extends Component {
             </div>
             <div class="folder-label-wrapper">
                 <span class="folder-name">${displayName}</span>
-                <span class="folder-count">(${count})</span>
+                <span class="folder-count">${count}</span>
             </div>
             ${isVirtual ? '' : `
-            <button class="folder-menu-trigger" title="Opciones">
-                ${this.svg.moreVert}
+            <button class="folder-menu-trigger" title="Editar carpeta">
+                ${this.svg.edit}
             </button>
             `}
-        `;
+        `);
         
         const trigger = div.querySelector('.folder-menu-trigger');
         if (trigger) trigger.onclick = (e) => {
             e.stopPropagation();
-            this.showFolderActionMenu(folderName, emoji, displayName, e);
+            this.showEditFolderPanel(folderName);
+        };
+
+        // Point 13: Drag Chat to Folder Drop Zone
+        div.ondragover = (e) => {
+            if (e.dataTransfer.types.includes('application/x-gemini-chat')) {
+                e.preventDefault();
+                div.classList.add('drag-over');
+            }
+        };
+        div.ondragleave = () => div.classList.remove('drag-over');
+        div.ondrop = async (e) => {
+            div.classList.remove('drag-over');
+            e.preventDefault();
+            const chatId = e.dataTransfer.getData('application/x-gemini-chat');
+            const bulkIds = e.dataTransfer.getData('application/x-gemini-chats-bulk');
+            
+            if (window.geminiOrganizerAppInstance) {
+                const fm = window.geminiOrganizerAppInstance.folderManager;
+                if (bulkIds) {
+                    const ids = bulkIds.split(',');
+                    for (const id of ids) await fm.addConversationToFolder(folderName, { id });
+                    showToast(`${ids.length} chats movidos a ${folderName}`, 'success');
+                } else if (chatId) {
+                    await fm.addConversationToFolder(folderName, { id: chatId });
+                    showToast(`Chat movido a ${folderName}`, 'success');
+                }
+                this.updateData();
+            }
         };
 
         
@@ -307,89 +516,204 @@ export default class RightPanel extends Component {
     }
 
 
-    showFolderActionMenu(folderName, emoji, displayName, event) {
-        // Remove existing menu if any
-        const existing = document.querySelector('#folder-action-menu');
+    showEditFolderPanel(folderName = null) {
+        const isEdit = !!folderName;
+        
+        let currentEmoji = '📂';
+        let currentPureName = '';
+
+        if (isEdit) {
+            try {
+                const segmenter = new Intl.Segmenter('en', { granularity: 'grapheme' });
+                const segments = Array.from(segmenter.segment(folderName));
+                if (segments.length > 0 && /\p{Emoji}/u.test(segments[0].segment)) {
+                    currentEmoji = segments[0].segment;
+                    currentPureName = folderName.slice(currentEmoji.length).trim();
+                } else {
+                    currentPureName = folderName;
+                }
+            } catch (e) {
+                const emojiMatch = folderName.match(/^(\p{Emoji})/u);
+                currentEmoji = emojiMatch ? emojiMatch[1] : '📂';
+                currentPureName = folderName.replace(/^(\p{Emoji})/u, '').trim();
+            }
+        }
+
+        // Remove existing
+        const existing = document.querySelector('#folder-edit-panel');
         if (existing) existing.remove();
 
-        const menu = document.createElement('div');
-        menu.id = 'folder-action-menu';
-        menu.className = 'premium-dropdown-menu';
+        const panel = document.createElement('div');
+        panel.id = 'folder-edit-panel';
+        panel.className = 'premium-edit-panel';
         
-        menu.innerHTML = `
-            <div class="menu-item emoji-opt">
-                <span class="menu-icon">${this.svg.mood}</span>
-                <span>Cambiar Emoji</span>
+        this.setSafeHTML(panel, `
+            <div class="edit-panel-header">
+                <h3>${isEdit ? 'Editar Carpeta' : 'Nueva Carpeta'}</h3>
+                <button class="close-panel-btn">${this.svg.close}</button>
             </div>
-            <div class="menu-item edit-opt">
-                <span class="menu-icon">${this.svg.edit}</span>
-                <span>Renombrar</span>
+            <div class="edit-panel-body">
+                <div class="edit-row">
+                    <div class="emoji-input-wrapper-btn" id="emoji-picker-trigger" title="Cambiar emoji">
+                        <span id="current-edit-emoji">${currentEmoji}</span>
+                    </div>
+                    <input type="text" id="edit-folder-name" placeholder="Nombre carpeta" value="${currentPureName}">
+                </div>
+                <div class="edit-actions">
+                    ${isEdit ? `<button class="delete-btn danger">${this.svg.delete} Borrar</button>` : ''}
+                    <div style="flex: 1"></div>
+                    <button class="save-btn primary">Guardar</button>
+                </div>
             </div>
-            <div class="menu-divider"></div>
-            <div class="menu-item delete-opt danger">
-                <span class="menu-icon">${this.svg.delete}</span>
-                <span>Eliminar</span>
-            </div>
-        `;
+        `);
 
-        // Position it
-        const rect = event.currentTarget.getBoundingClientRect();
-        menu.style.position = 'fixed';
-        menu.style.top = `${rect.bottom + 5}px`;
-        menu.style.left = `${rect.left - 120}px`; // Shift left to align and fit
+        panel.onclick = (e) => e.stopPropagation(); // Avoid triggering global outside-click for anything in panel
         
-        document.body.appendChild(menu);
+        document.body.appendChild(panel);
 
-        // Events
-        menu.querySelector('.emoji-opt').onclick = (e) => {
+        // Center the edit panel horizontally over the sidebar container for best visibility
+        const sidebarRect = this.getVisiblePanelElement().getBoundingClientRect();
+        const panelWidth = 280;
+        const panelHeight = 220; // Estimated height
+
+        // Horizontal centering over sidebar
+        let left = sidebarRect.left + (sidebarRect.width - panelWidth) / 2;
+        
+        // Vertical positioning
+        let top = isEdit ? this.getVisiblePanelElement().querySelector(`[data-folder-name="${folderName}"]`)?.getBoundingClientRect().top || 150 : 150;
+        
+        // Boundary checks
+        if (top + panelHeight > window.innerHeight - 20) {
+            top = window.innerHeight - panelHeight - 20;
+        }
+
+        panel.style.top = `${Math.max(10, top)}px`;
+        panel.style.left = `${Math.max(10, left)}px`;
+
+        const nameInput = panel.querySelector('#edit-folder-name');
+        nameInput.focus();
+        nameInput.select();
+
+        panel.querySelector('.close-panel-btn').onclick = () => panel.remove();
+
+        const emojiTrigger = panel.querySelector('#emoji-picker-trigger');
+        emojiTrigger.onclick = (e) => {
             e.stopPropagation();
-            const newEmoji = prompt('Elige un emoji:', emoji || '');
-            if (newEmoji !== null) {
-                const pureName = folderName.replace(/^(\p{Emoji})/u, '').trim();
-                const newFolderName = newEmoji ? `${newEmoji} ${pureName}` : pureName;
-                window.geminiOrganizerAppInstance.folderManager.renameFolder(folderName, newFolderName);
+            this.showEmojiPicker(emojiTrigger, (emoji) => {
+                panel.querySelector('#current-edit-emoji').textContent = emoji;
+            });
+        };
+        
+        const handleSave = async () => {
+            const newEmoji = panel.querySelector('#current-edit-emoji').textContent.trim();
+            const newPureName = nameInput.value.trim();
+            if (!newPureName) return;
+
+            const finalName = newEmoji ? `${newEmoji} ${newPureName}` : newPureName;
+
+            try {
+                if (isEdit) {
+                    await window.geminiOrganizerAppInstance.folderManager.renameFolder(folderName, finalName);
+                    if (this.currentFolderView === folderName) this.currentFolderView = finalName;
+                } else {
+                    await window.geminiOrganizerAppInstance.folderManager.createFolder(finalName);
+                }
+                this.updateData();
+                panel.remove();
+            } catch (e) {
+                showToast(e.message, 'error');
             }
-            menu.remove();
         };
 
-        menu.querySelector('.edit-opt').onclick = (e) => {
-            e.stopPropagation();
-            const newName = prompt('Nuevo nombre:', displayName);
-            if (newName && newName !== displayName) {
-                const finalName = emoji ? `${emoji} ${newName}` : newName;
-                window.geminiOrganizerAppInstance.folderManager.renameFolder(folderName, finalName);
-            }
-            menu.remove();
-        };
+        panel.querySelector('.save-btn').onclick = handleSave;
+        nameInput.onkeydown = (e) => { if (e.key === 'Enter') handleSave(); };
 
-        menu.querySelector('.delete-opt').onclick = (e) => {
-            e.stopPropagation();
-            if (confirm(`¿Eliminar "${folderName}"?`)) {
-                window.geminiOrganizerAppInstance.folderManager.deleteFolder(folderName);
-                if (this.currentFolderView === folderName) this.currentFolderView = null;
-            }
-            menu.remove();
-        };
+        if (isEdit) {
+            panel.querySelector('.delete-btn').onclick = async () => {
+                if (confirm(`¿Eliminar "${folderName}"?`)) {
+                    await window.geminiOrganizerAppInstance.folderManager.deleteFolder(folderName);
+                    if (this.currentFolderView === folderName) this.currentFolderView = null;
+                    this.updateData();
+                    panel.remove();
+                }
+            };
+        }
 
-        // Close on click outside
-        const closeMenu = (e) => {
-            if (!menu.contains(e.target)) {
-                menu.remove();
-                document.removeEventListener('mousedown', closeMenu);
+        // Close on escape
+        const escListener = (e) => {
+            if (e.key === 'Escape') {
+                panel.remove();
+                document.removeEventListener('keydown', escListener);
             }
         };
-        setTimeout(() => document.addEventListener('mousedown', closeMenu), 0);
+        document.addEventListener('keydown', escListener);
+    }
+
+    showEmojiPicker(triggerElement, onSelect) {
+        const existing = document.querySelector('#manual-emoji-picker');
+        if (existing) {
+            existing.remove();
+            return;
+        }
+
+        const picker = new ManualEmojiPicker({
+            onSelect: (emoji) => {
+                onSelect(emoji);
+                picker.element.remove();
+            }
+        });
+        
+        const pickerEl = picker.create();
+        const panel = document.querySelector('#folder-edit-panel');
+        if (panel) {
+            panel.appendChild(pickerEl);
+        } else {
+            document.body.appendChild(pickerEl);
+        }
+
+        const rect = triggerElement.getBoundingClientRect();
+        const panelRect = panel ? panel.getBoundingClientRect() : { top: 0, left: 0 };
+        
+        // Match the panel structure precisely
+        // Since picker is inside padded panel (16px), offset it to align with edges
+        pickerEl.style.position = 'absolute';
+        pickerEl.style.left = '-1px'; // Align with border
+        pickerEl.style.width = 'calc(100% + 2px)';
+        pickerEl.style.top = `${rect.bottom - panelRect.top + 8}px`;
+        pickerEl.style.zIndex = '2000001';
+
+        const closePicker = (e) => {
+            if (!pickerEl.contains(e.target) && !triggerElement.contains(e.target)) {
+                e.stopPropagation();
+                pickerEl.remove();
+                document.removeEventListener('mousedown', closePicker);
+            }
+        };
+        setTimeout(() => document.addEventListener('mousedown', closePicker), 0);
     }
 
 
-    renderConversationItem(conv) {
+    renderConversationItem(conv, folder) {
         const li = document.createElement('li');
         li.className = 'conversation-item';
         if (this.isBulkMode) li.classList.add('bulk-mode');
         if (this.selectedConvIds.has(conv.id)) li.classList.add('selected');
         li.dataset.convId = conv.id;
         
-        const tagsHtml = (conv.tags || []).map(t => `<span class="badge tag" data-tag="${t}">#${t}</span>`).join('');
+        // Point 13: Drag Chat
+        li.draggable = true;
+        li.ondragstart = (e) => {
+            if (this.isBulkMode && this.selectedConvIds.has(conv.id)) {
+                // Dragging multiple
+                e.dataTransfer.setData('application/x-gemini-chats-bulk', Array.from(this.selectedConvIds).join(','));
+            } else {
+                e.dataTransfer.setData('application/x-gemini-chat', conv.id);
+            }
+            li.classList.add('is-dragging');
+        };
+        li.ondragend = () => li.classList.remove('is-dragging');
+        
+        const tagsHtml = (conv.tags || []).map(tag => `<span class="badge tag">${tag}</span>`).join('');
         const foldersHtml = (conv.folders || []).map(f => {
             const hasEmoji = /\p{Emoji}/u.test(f.trim().substring(0, 2));
             return `
@@ -400,30 +724,26 @@ export default class RightPanel extends Component {
             `;
         }).join('');
 
-        li.innerHTML = `
+        this.setSafeHTML(li, `
             ${this.isBulkMode ? `<input type="checkbox" class="bulk-checkbox" ${this.selectedConvIds.has(conv.id) ? 'checked' : ''}>` : ''}
             <div class="conversation-item-content">
                 <div class="conversation-main-row">
-                    <span class="conversation-title" title="${conv.title}">${conv.title}</span>
-
+                    <span class="conversation-title" title="${conv.title}">${conv.title} <span class="conv-tags-inline">${tagsHtml}</span></span>
                     <button class="action-btn-mini edit-chat-title-btn" title="Renombrar chat">
                         ${this.svg.edit}
                     </button>
                 </div>
                 <div class="conversation-meta-row">
                     ${foldersHtml}
-                    <div class="tags-container">
-                        ${tagsHtml}
-                        <button class="add-tag-btn" title="Añadir etiqueta">
-                            ${this.svg.plus}
-                        </button>
-                    </div>
+                    <button class="add-tag-btn" title="Añadir etiqueta">
+                        ${this.svg.plus}
+                    </button>
                     <button class="action-btn-mini delete-chat-btn" title="Eliminar del organizador">
                         ${this.svg.delete}
                     </button>
                 </div>
             </div>
-        `;
+        `);
 
         li.onclick = (e) => {
             if (e.target.closest('.action-btn-mini') || e.target.closest('.add-tag-btn') || e.target.closest('.badge.tag')) return;
@@ -432,16 +752,11 @@ export default class RightPanel extends Component {
             }
         };
 
-        const folder = this.currentFolderView || (conv.folders && conv.folders[0]);
-
         // Rename logic
         const editTitleBtn = li.querySelector('.edit-chat-title-btn');
         if (editTitleBtn) editTitleBtn.onclick = (e) => {
             e.stopPropagation();
-            const newTitle = prompt('Nuevo título para la conversación:', conv.title);
-            if (newTitle && newTitle !== conv.title && window.geminiOrganizerAppInstance) {
-                window.geminiOrganizerAppInstance.folderManager.renameConversation(folder, conv.id, newTitle);
-            }
+            this.showEditChatPanel(conv, folder, editTitleBtn);
         };
 
         // Add tag logic
@@ -458,13 +773,9 @@ export default class RightPanel extends Component {
         li.querySelectorAll('.badge.tag').forEach(tagEl => {
             tagEl.onclick = (e) => {
                 e.stopPropagation();
-                const tag = tagEl.dataset.tag;
+                const tag = tagEl.textContent;
                 if (e.altKey || e.ctrlKey) { // Option/Ctrl click to delete
-                    if (confirm(`¿Eliminar etiqueta #${tag}?`)) {
-                        if (window.geminiOrganizerAppInstance) {
-                            window.geminiOrganizerAppInstance.folderManager.removeTagFromConversation(folder, conv.id, tag);
-                        }
-                    }
+                    this.showDeleteTagPanel(conv, folder, tag);
                 } else { // Direct click to filter
                     this.searchTerm = tag;
                     const input = this.element.querySelector('#right-panel-search');
@@ -474,15 +785,10 @@ export default class RightPanel extends Component {
             };
         });
 
-
-        const delBtn = li.querySelector('.delete-chat-btn');
-        if (delBtn) delBtn.onclick = (e) => {
+        const deleteChatBtn = li.querySelector('.delete-chat-btn');
+        if (deleteChatBtn) deleteChatBtn.onclick = (e) => {
             e.stopPropagation();
-            if (confirm('¿Eliminar esta conversación de la carpeta?')) {
-                if (folder && window.geminiOrganizerAppInstance) {
-                    window.geminiOrganizerAppInstance.folderManager.deleteConversation(folder, conv.id);
-                }
-            }
+            this.showDeleteChatPanel(conv, folder);
         };
 
         return li;
@@ -490,113 +796,39 @@ export default class RightPanel extends Component {
 
     toggle(force) {
         if (!this.element) return;
+        const panel = this.element.querySelector('#gemini-organizer-right-panel');
+        if (!panel) {
+            console.error("RightPanel: No se encontró el contenedor del panel para toggle");
+            return;
+        }
         
-        const isCurrentlyHidden = this.element.classList.contains('hidden');
+        const isCurrentlyHidden = panel.classList.contains('hidden');
         const newHiddenState = force !== undefined ? !force : !isCurrentlyHidden;
         
-        this.element.classList.toggle('hidden', newHiddenState);
+        panel.classList.toggle('hidden', newHiddenState);
         this.isOpen = !newHiddenState;
         
         const tab = this.element.querySelector('#gemini-organizer-right-panel-tab');
         if (tab) {
             const iconWrap = tab.querySelector('.handle-inner');
             if (iconWrap) {
-                iconWrap.innerHTML = newHiddenState ? this.svg.chevronLeft : this.svg.chevronRight;
+                this.setSafeHTML(iconWrap, newHiddenState ? this.svg.chevronLeft : this.svg.chevronRight);
             }
         }
     }
 
-    afterRender() {
-        if (!this.element) return;
-        
-        const backBtn = this.element.querySelector('#right-back-btn');
-        if (backBtn) backBtn.onclick = () => {
-            if (this.currentFolderView) {
-                this.currentFolderView = null;
-                this.updateData();
-            } else {
-                // If already at Home, maybe just refresh?
-                this.updateData();
-            }
-        };
 
-        const drawerHandle = this.element.querySelector('.drawer-handle');
-        if (drawerHandle) drawerHandle.onclick = () => this.toggle();
-        
-        const closeBtn = this.element.querySelector('#close-right-panel');
-        if (closeBtn) closeBtn.onclick = () => this.toggle(false);
 
-        const settingsBtn = this.element.querySelector('#right-settings-btn');
-        if (settingsBtn) settingsBtn.onclick = (e) => {
-            e.stopPropagation();
-            this.showSettingsMenu();
-        };
-
-        const searchInput = this.element.querySelector('#right-panel-search');
-
-        if (searchInput) {
-            searchInput.oninput = (e) => {
-                this.searchTerm = e.target.value.toLowerCase().trim();
-                this.updateData();
-            };
-        }
-
-        const bulkToggleBtn = this.element.querySelector('#right-bulk-toggle');
-        if (bulkToggleBtn) {
-            bulkToggleBtn.classList.toggle('active', this.isBulkMode);
-            bulkToggleBtn.onclick = () => {
-                this.isBulkMode = !this.isBulkMode;
-                if (!this.isBulkMode) this.selectedConvIds.clear();
-                this.updateData();
-                this.updateBulkBar();
-            };
-        }
-
-        // Checkbox events
-        this.element.querySelectorAll('.bulk-checkbox').forEach(cb => {
-            cb.onchange = (e) => {
-                const li = cb.closest('.conversation-item');
-                const id = li.dataset.convId;
-                if (cb.checked) {
-                    this.selectedConvIds.add(id);
-                    li.classList.add('selected');
-                } else {
-                    this.selectedConvIds.delete(id);
-                    li.classList.remove('selected');
-                }
-                this.updateBulkBar();
-            };
-        });
-
-        // Bulk Actions
-        const bulkBar = this.element.querySelector('#right-bulk-action-bar');
-        if (bulkBar) {
-            bulkBar.querySelector('.bulk-move-btn').onclick = () => this.handleBulkMove();
-            bulkBar.querySelector('.bulk-delete-btn').onclick = () => this.handleBulkDelete();
-        }
-
-        this.initResizers();
-
-        
-        // Drag and Drop Listeners for Folder Cards
-        if (this.dragAndDropHandler) {
-            this.element.querySelectorAll('.folder-card:not(.virtual-folder)').forEach(card => {
-                card.ondragover = this.dragAndDropHandler.handleDragOver.bind(this.dragAndDropHandler);
-                card.ondragleave = this.dragAndDropHandler.handleDragLeave.bind(this.dragAndDropHandler);
-                card.ondrop = async (e) => {
-                    await this.dragAndDropHandler.handleDrop(e);
-                    this.updateData();
-                };
-            });
-        }
-    }
 
 
     initResizers() {
         const root = this.element;
-        const panelResizer = root.querySelector('#right-panel-resizer');
-        const dividerResizer = root.querySelector('#right-panel-divider');
-        const foldersContainer = root.querySelector('#folders-main-container');
+        const panel = this.getVisiblePanelElement();
+        if (!root || !panel) return;
+
+        const panelResizer = panel.querySelector('#right-panel-resizer');
+        const dividerResizer = panel.querySelector('#right-panel-divider');
+        const foldersContainer = panel.querySelector('#folders-main-container');
 
         // Horizontal Resizer (Panel Width)
         if (panelResizer) {
@@ -604,17 +836,18 @@ export default class RightPanel extends Component {
                 e.preventDefault();
                 panelResizer.classList.add('is-resizing');
                 const startX = e.clientX;
-                const startWidth = root.offsetWidth;
+                const startWidth = panel.offsetWidth;
 
                 const onMouseMove = (moveEvent) => {
                     const delta = startX - moveEvent.clientX; // Dragging left increases width
                     const newWidth = Math.min(Math.max(startWidth + delta, 300), 700);
-                    root.style.width = `${newWidth}px`;
+                    panel.style.width = `${newWidth}px`;
+                    this.settings.panelWidth = newWidth;
                 };
 
                 const onMouseUp = () => {
                     panelResizer.classList.remove('is-resizing');
-                    this.settings.panelWidth = root.offsetWidth;
+                    this.settings.panelWidth = panel.offsetWidth;
                     this.saveSettings();
                     window.removeEventListener('mousemove', onMouseMove);
                     window.removeEventListener('mouseup', onMouseUp);
@@ -640,6 +873,7 @@ export default class RightPanel extends Component {
                     const newHeight = Math.min(Math.max(startHeight + delta, 100), parentHeight - 100);
                     const percentage = (newHeight / parentHeight) * 100;
                     foldersContainer.style.height = `${percentage}%`;
+                    this.settings.foldersHeight = percentage;
                 };
 
                 const onMouseUp = () => {
@@ -649,7 +883,6 @@ export default class RightPanel extends Component {
                     window.removeEventListener('mousemove', onMouseMove);
                     window.removeEventListener('mouseup', onMouseUp);
                 };
-
 
                 window.addEventListener('mousemove', onMouseMove);
                 window.addEventListener('mouseup', onMouseUp);
@@ -668,57 +901,162 @@ export default class RightPanel extends Component {
     }
 
     async handleBulkMove() {
-        if (this.selectedConvIds.size === 0) return;
-        const folders = Object.keys(this.lastData.folders);
-        if (folders.length === 0) return;
-
-        const target = prompt(`Mover ${this.selectedConvIds.size} chats a:\n${folders.join(', ')}`);
-        if (target && folders.includes(target) && window.geminiOrganizerAppInstance) {
-            await window.geminiOrganizerAppInstance.folderManager.moveConversationsToFolder(
-                Array.from(this.selectedConvIds), 
-                this.currentFolderView || 'Recientes',
-                target
-            );
+        const ids = Array.from(this.selectedConvIds);
+        if (ids.length === 0) return;
+        
+        const allFolders = await window.geminiOrganizerAppInstance.storage.getFolders();
+        
+        this.showFolderPickerPanel(`Mover ${ids.length} chats a:`, async (folderName) => {
+            const fm = window.geminiOrganizerAppInstance.folderManager;
+            for (const id of ids) {
+                await fm.addConversationToFolder(folderName, { id });
+            }
             this.isBulkMode = false;
             this.selectedConvIds.clear();
             this.updateData();
-        }
+            showToast(`${ids.length} chats movidos`, 'success');
+        });
+    }
+
+    showFolderPickerPanel(title, onSelect) {
+        const panel = document.createElement('div');
+        panel.className = 'premium-edit-panel';
+        
+        this.setSafeHTML(panel, `
+            <div class="edit-panel-header">
+                <h3>${title}</h3>
+                <button class="close-panel-btn">${this.svg.close}</button>
+            </div>
+            <div class="edit-panel-body">
+                <div class="folder-selection-grid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: 8px; margin-top: 10px;">
+                    ${Object.keys(this.lastData.folders).map(f => `<button class="folder-option-btn">${f}</button>`).join('')}
+                </div>
+            </div>
+        `);
+        
+        document.body.appendChild(panel);
+        this.centerPanel(panel);
+        
+        panel.querySelector('.close-panel-btn').onclick = () => panel.remove();
+        panel.querySelectorAll('.folder-option-btn').forEach(btn => {
+            btn.onclick = () => {
+                onSelect(btn.textContent);
+                panel.remove();
+            };
+        });
     }
 
     async handleBulkDelete() {
-        if (this.selectedConvIds.size === 0) return;
-        if (confirm(`¿Eliminar ${this.selectedConvIds.size} chats de esta carpeta?`)) {
-            if (window.geminiOrganizerAppInstance) {
-                await window.geminiOrganizerAppInstance.folderManager.deleteMultipleConversations(
-                    this.currentFolderView || 'Recientes',
-                    Array.from(this.selectedConvIds)
-                );
-                this.isBulkMode = false;
-                this.selectedConvIds.clear();
-                this.updateData();
+        const ids = Array.from(this.selectedConvIds);
+        if (ids.length === 0) return;
+
+        this.showConfirmPanel(`¿Eliminar ${ids.length} chats del organizador?`, async () => {
+            const fm = window.geminiOrganizerAppInstance.folderManager;
+
+            if (this.currentFolderView) {
+                for (const id of ids) {
+                    await fm.removeConversationFromFolder(this.currentFolderView, id);
+                }
+            } else {
+                const allFolders = await window.geminiOrganizerAppInstance.storage.getFolders();
+                for (const id of ids) {
+                    for (const folderName in allFolders) {
+                        await fm.removeConversationFromFolder(folderName, id);
+                    }
+                }
             }
-        }
+
+            this.isBulkMode = false;
+            this.selectedConvIds.clear();
+            this.updateData();
+            showToast(`${ids.length} chats eliminados`, 'success');
+        });
+    }
+
+    async handleBulkRemove() {
+        const ids = Array.from(this.selectedConvIds);
+        if (ids.length === 0) return;
+
+        this.showConfirmPanel(`¿Quitar ${ids.length} chats de sus carpetas actuales?`, async () => {
+            const fm = window.geminiOrganizerAppInstance.folderManager;
+            const allFolders = await window.geminiOrganizerAppInstance.storage.getFolders();
+
+            for (const id of ids) {
+                for (const folderName in allFolders) {
+                    await fm.removeConversationFromFolder(folderName, id);
+                }
+            }
+
+            this.isBulkMode = false;
+            this.selectedConvIds.clear();
+            this.updateData();
+            showToast('Chats movidos a "No Ordenados"', 'success');
+        });
+    }
+
+    showConfirmPanel(message, onConfirm) {
+        const panel = document.createElement('div');
+        panel.className = 'premium-edit-panel confirm-panel';
+        this.setSafeHTML(panel, `
+            <div class="edit-panel-body">
+                <p class="confirm-message">${message}</p>
+                <div class="edit-actions">
+                    <button class="cancel-btn">Cancelar</button>
+                    <button class="confirm-btn danger">Confirmar</button>
+                </div>
+            </div>
+        `);
+        document.body.appendChild(panel);
+        this.centerPanel(panel);
+        
+        panel.querySelector('.cancel-btn').onclick = () => panel.remove();
+        panel.querySelector('.confirm-btn').onclick = () => {
+            onConfirm();
+            panel.remove();
+        };
     }
 
     async loadSettings() {
         if (!window.geminiOrganizerAppInstance) return;
-        this.settings = await window.geminiOrganizerAppInstance.storage.getSettings();
-        this.user = await this.auth.getUserInfo();
+        
+        // 1. Load Local Settings (Fast)
+        try {
+            this.settings = await window.geminiOrganizerAppInstance.storage.getSettings();
+        } catch (e) {
+            console.error("RightPanel: Error loading settings", e);
+        }
+        
+        // 2. Apply Visuals as soon as possible
         this.applySettings();
+
+        // 3. User Identity (Async / Non-blocking)
+        // We don't await this to prevent identity service hangups from blocking the UI
+        this.auth.getUserInfo().then(user => {
+            this.user = user;
+            console.log("RightPanel: Identidad de usuario cargada asíncronamente");
+        }).catch(err => {
+            console.warn("RightPanel: Fallo al cargar identidad (no crítico)", err);
+        });
     }
 
 
     applySettings() {
         if (!this.element) return;
+        const panel = this.getVisiblePanelElement();
         
-        // 1. Density
-        this.element.classList.toggle('density-compact', this.settings.density === 'compact');
+        // 1. Density (Forced compact now)
+        this.element.classList.add('density-compact');
         
         // 2. Dimensions
-        this.element.style.width = `${this.settings.panelWidth}px`;
-        const foldersContainer = this.element.querySelector('#folders-main-container');
+        const width = this.settings.panelWidth || 340;
+        if (panel) {
+            panel.style.width = `${width}px`;
+        }
+        
+        const foldersContainer = panel?.querySelector('#folders-main-container') || this.element.querySelector('#folders-main-container');
         if (foldersContainer) {
-            foldersContainer.style.height = `${this.settings.settings?.foldersHeight || 38}%`;
+            const height = this.settings.foldersHeight || 40;
+            foldersContainer.style.height = `${height}%`;
         }
     }
 
@@ -760,23 +1098,19 @@ export default class RightPanel extends Component {
              <div class="premium-dropdown-menu .menu-divider" style="margin: 0 0 8px 0;"></div>
         `;
 
-        menu.innerHTML = `
+        this.setSafeHTML(menu, `
             ${userHtml}
-            <div class="settings-title-label">APARIENCIA</div>
-            <div class="settings-option" id="opt-density">
-                <span class="settings-label">Modo Compacto</span>
-                <div class="settings-toggle ${this.settings.density === 'compact' ? 'active' : ''}"></div>
-            </div>
-            <div class="settings-title-label" style="margin-top: 8px;">SERVICIO</div>
+            <div class="settings-title-label">SISTEMA</div>
             <div class="settings-option" id="opt-backup">
-                <span class="settings-label">Crear Respaldo</span>
+                <span class="settings-label">Exportar/Importar (.json)</span>
                 ${this.svg.chevronRight}
             </div>
-             <div class="settings-option" id="opt-restore">
-                <span class="settings-label">Restaurar</span>
-                ${this.svg.chevronRight}
+             <div class="settings-title-label" style="margin-top: 8px;">APARIENCIA</div>
+            <div class="settings-option disabled">
+                <span class="settings-label">Modo Compacto (Activo)</span>
+                <div class="settings-toggle active"></div>
             </div>
-        `;
+        `);
 
 
         document.body.appendChild(menu);
@@ -788,21 +1122,9 @@ export default class RightPanel extends Component {
         menu.style.left = `${rect.right - 220}px`;
 
         // Events
-        menu.querySelector('#opt-density').onclick = () => {
-            this.settings.density = this.settings.density === 'compact' ? 'standard' : 'compact';
-            this.applySettings();
-            this.saveSettings();
-            menu.querySelector('.settings-toggle').classList.toggle('active', this.settings.density === 'compact');
-        };
-
         menu.querySelector('#opt-backup').onclick = () => {
-             window.geminiOrganizerAppInstance.folderManager.exportBackup(); 
              menu.remove();
-        };
-
-        menu.querySelector('#opt-restore').onclick = () => {
-             window.geminiOrganizerAppInstance.folderManager.importBackup();
-             menu.remove();
+             this.showDataManagementPanel();
         };
 
         // Close on click outside
@@ -814,6 +1136,244 @@ export default class RightPanel extends Component {
         };
         setTimeout(() => document.addEventListener('mousedown', close), 0);
     }
+
+    showEditChatPanel(conv, folder, triggerElement = null) {
+        const panel = document.createElement('div');
+        panel.id = 'folder-edit-panel';
+        panel.className = 'premium-edit-panel';
+        
+        const currentTags = (conv.tags || []).join(', ');
+        
+        this.setSafeHTML(panel, `
+            <div class="edit-panel-header">
+                <h3>Editar Chat</h3>
+                <button class="close-panel-btn">${this.svg.close}</button>
+            </div>
+            <div class="edit-panel-body">
+                <div class="edit-row">
+                    <label style="font-size: 11px; color: var(--rp-text-secondary); margin-bottom: 4px; display: block;">TÍTULO</label>
+                    <input type="text" id="edit-chat-title" placeholder="Título del chat" value="${conv.title}">
+                </div>
+                <div class="edit-row" style="margin-top: 12px;">
+                    <label style="font-size: 11px; color: var(--rp-text-secondary); margin-bottom: 4px; display: block;">ETIQUETAS (separadas por coma)</label>
+                    <input type="text" id="edit-chat-tags" placeholder="ej: trabajo, ideas, personal" value="${currentTags}">
+                </div>
+                <div class="edit-actions" style="margin-top: 24px; display: flex; gap: 12px; align-items: center;">
+                    <button class="delete-btn danger-text" style="background: none; border: none; color: #f28b82; cursor: pointer; display: flex; align-items: center; gap: 6px; font-size: 13px; font-weight: 500; padding: 8px 0;">
+                        ${this.svg.delete} Eliminar Chat
+                    </button>
+                    <div style="flex: 1"></div>
+                    <button class="save-btn primary" style="background: #a8c7fa; color: #062e6f; border: none; padding: 10px 24px; border-radius: 20px; cursor: pointer; font-weight: 600; font-size: 14px; box-shadow: 0 1px 3px rgba(0,0,0,0.2);">
+                        Guardar
+                    </button>
+                </div>
+            </div>
+        `);
+        document.body.appendChild(panel);
+        
+        // Dynamic Positioning
+        if (triggerElement) {
+            const rect = triggerElement.getBoundingClientRect();
+            const panelWidth = 280;
+            const rightPanelRect = this.getVisiblePanelElement().getBoundingClientRect();
+            
+            let top = rect.top;
+            if (top + 250 > window.innerHeight) top = window.innerHeight - 260;
+            
+            panel.style.top = `${top}px`;
+            panel.style.left = `${rightPanelRect.left + (rightPanelRect.width - panelWidth) / 2}px`;
+        } else {
+            this.centerPanel(panel);
+        }
+        
+        const inputTitle = panel.querySelector('#edit-chat-title');
+        const inputTags = panel.querySelector('#edit-chat-tags');
+        inputTitle.focus();
+
+        panel.querySelector('.close-panel-btn').onclick = () => panel.remove();
+        
+        const save = async () => {
+            const newTitle = inputTitle.value.trim();
+            const tagsString = inputTags.value.trim();
+            
+            if (window.geminiOrganizerAppInstance) {
+                const fm = window.geminiOrganizerAppInstance.folderManager;
+                const ga = window.geminiOrganizerAppInstance.geminiAdapter;
+                const newTags = tagsString ? tagsString.split(',').map(t => t.trim()).filter(t => t) : [];
+                
+                await fm.updateConversationMetadata(folder, conv.id, newTitle, newTags);
+                
+                // Native Sync (Point 4): Tags at the end of title
+                const tagsSuffix = newTags.length > 0 ? ` [${newTags.join(', ')}]` : '';
+                const fullTitle = `${newTitle}${tagsSuffix}`;
+                if (ga) await ga.renameConversationNative(conv.id, fullTitle);
+                
+                this.updateData();
+                panel.remove();
+            }
+        };
+
+        panel.querySelector('.save-btn').onclick = save;
+        inputTitle.onkeydown = (e) => e.key === 'Enter' && save();
+        
+        panel.querySelector('.delete-btn').onclick = () => {
+            panel.remove();
+            this.showDeleteChatPanel(conv, folder);
+        };
+    }
+
+    showDeleteChatPanel(conv, folder) {
+        const panel = document.createElement('div');
+        panel.id = 'folder-edit-panel';
+        panel.className = 'premium-edit-panel';
+        this.setSafeHTML(panel, `
+            <div class="edit-panel-header">
+                <h3>Eliminar Conversación</h3>
+                <button class="close-panel-btn">${this.svg.close}</button>
+            </div>
+            <div class="edit-panel-body">
+                <p style="color: var(--rp-text-secondary); margin-bottom: 20px;">
+                    ¿Seguro que quieres eliminar "${conv.title}" de esta carpeta?
+                </p>
+                <div class="edit-actions">
+                    <button class="delete-btn danger">Confirmar Borrado</button>
+                    <div style="flex: 1"></div>
+                    <button class="save-btn secondary">Cancelar</button>
+                </div>
+            </div>
+        `);
+        document.body.appendChild(panel);
+        this.centerPanel(panel);
+
+        panel.querySelector('.close-panel-btn').onclick = () => panel.remove();
+        panel.querySelector('.save-btn.secondary').onclick = () => panel.remove();
+        panel.querySelector('.delete-btn').onclick = async () => {
+            if (window.geminiOrganizerAppInstance) {
+                await window.geminiOrganizerAppInstance.folderManager.deleteConversation(folder, conv.id);
+                this.updateData();
+                panel.remove();
+            }
+        };
+    }
+
+    showDeleteTagPanel(conv, folder, tag) {
+        const panel = document.createElement('div');
+        panel.id = 'folder-edit-panel';
+        panel.className = 'premium-edit-panel';
+        this.setSafeHTML(panel, `
+            <div class="edit-panel-header">
+                <h3>Eliminar Etiqueta</h3>
+                <button class="close-panel-btn">${this.svg.close}</button>
+            </div>
+            <div class="edit-panel-body">
+                <p style="color: var(--rp-text-secondary); margin-bottom: 20px;">
+                    ¿Seguro que quieres quitar la etiqueta <strong>#${tag}</strong> de este chat?
+                </p>
+                <div class="edit-actions">
+                    <button class="delete-btn danger">Quitar Etiqueta</button>
+                    <div style="flex: 1"></div>
+                    <button class="save-btn secondary">Cancelar</button>
+                </div>
+            </div>
+        `);
+        document.body.appendChild(panel);
+        this.centerPanel(panel);
+        panel.querySelector('.delete-btn').onclick = async () => {
+            if (window.geminiOrganizerAppInstance) {
+                await window.geminiOrganizerAppInstance.folderManager.removeTagFromConversation(folder, conv.id, tag);
+                this.updateData();
+                panel.remove();
+            }
+        };
+        panel.querySelector('.save-btn').onclick = () => panel.remove();
+        panel.querySelector('.close-panel-btn').onclick = () => panel.remove();
+    }
+
+    showDataManagementPanel() {
+        const panel = document.createElement('div');
+        panel.id = 'folder-edit-panel';
+        panel.className = 'premium-edit-panel';
+        this.setSafeHTML(panel, `
+            <div class="edit-panel-header">
+                <h3>Gestión de Datos</h3>
+                <button class="close-panel-btn">${this.svg.close}</button>
+            </div>
+            <div class="edit-panel-body">
+                <div class="data-actions-row" style="display: flex; flex-direction: column; gap: 12px; margin-bottom: 20px;">
+                    <button class="data-box-btn" id="data-export-btn" style="padding: 16px; background: rgba(168, 199, 250, 0.05); border: 1px solid rgba(168, 199, 250, 0.1); border-radius: 12px; cursor: pointer; display: flex; align-items: center; gap: 12px; width: 100%; text-align: left;">
+                        <span style="font-size: 24px;">📤</span>
+                        <div style="flex: 1">
+                            <div style="font-weight: 500; color: #a8c7fa;">Exportar JSON</div>
+                            <div style="font-size: 12px; color: var(--rp-text-secondary);">Descarga un respaldo de tus carpetas</div>
+                        </div>
+                    </button>
+                    <button class="data-box-btn" id="data-import-btn" style="padding: 16px; background: rgba(255, 255, 255, 0.02); border: 1px solid rgba(255, 255, 255, 0.05); border-radius: 12px; cursor: pointer; display: flex; align-items: center; gap: 12px; width: 100%; text-align: left;">
+                        <span style="font-size: 24px;">📥</span>
+                        <div style="flex: 1">
+                            <div style="font-weight: 500; color: var(--rp-text-primary);">Importar JSON</div>
+                            <div style="font-size: 12px; color: var(--rp-text-secondary);">Restaura datos desde un archivo .json</div>
+                        </div>
+                    </button>
+                </div>
+            </div>
+        `);
+        document.body.appendChild(panel);
+        this.centerPanel(panel);
+
+        panel.querySelector('.close-panel-btn').onclick = () => panel.remove();
+        
+        // Use more robust access to folderManager
+        const getFM = () => window.geminiOrganizerAppInstance?.folderManager;
+
+        panel.querySelector('#data-export-btn').onclick = () => {
+            const fm = getFM();
+            if (fm) fm.exportBackup();
+            panel.remove();
+        };
+        panel.querySelector('#data-import-btn').onclick = () => {
+            const fm = getFM();
+            if (fm) fm.importBackup();
+            panel.remove();
+        };
+    }
+
+    updateTagsBar(data) {
+        const bar = this.element.querySelector('#right-tags-bar');
+        if (!bar) return;
+        
+        // Extract tags based on view
+        let tagsSet = new Set();
+        if (this.currentFolderView && data.folders[this.currentFolderView]) {
+            data.folders[this.currentFolderView].forEach(c => (c.tags || []).forEach(t => tagsSet.add(t)));
+        } else {
+            // Global view
+            data.conversations.forEach(c => (c.tags || []).forEach(t => tagsSet.add(t)));
+        }
+        
+        const tags = Array.from(tagsSet).sort();
+        if (tags.length === 0) {
+            this.setSafeHTML(bar, '');
+            return;
+        }
+
+        this.setSafeHTML(bar, tags.map(tag => `<span class="tag-chip" data-tag="${tag}">${tag}</span>`).join(''));
+        
+        bar.querySelectorAll('.tag-chip').forEach(chip => {
+            chip.onclick = () => {
+                const searchInput = this.element.querySelector('#right-panel-search');
+                if (searchInput) {
+                    searchInput.value = chip.dataset.tag;
+                    this.searchTerm = chip.dataset.tag.toLowerCase();
+                    this.updateData();
+                }
+            };
+        });
+    }
+
+    centerPanel(panel) {
+        const rightPanelRect = this.getVisiblePanelElement().getBoundingClientRect();
+        const l = rightPanelRect.left + (rightPanelRect.width - 280) / 2;
+        panel.style.top = `150px`;
+        panel.style.left = `${Math.max(10, l)}px`;
+    }
 }
-
-

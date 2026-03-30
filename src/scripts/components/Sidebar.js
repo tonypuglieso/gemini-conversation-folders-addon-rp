@@ -102,10 +102,10 @@ export default class Sidebar extends Component {
         const iconElement = document.getElementById('sync-status-icon');
         if (iconElement) {
             if (isSyncEnabled) {
-                iconElement.innerHTML = `<mat-icon role="img" class="mat-icon notranslate google-symbols mat-ligature-font mat-icon-no-color" aria-hidden="true" data-mat-icon-type="font" data-mat-icon-name="cloud" fonticon="cloud"></mat-icon>`;
+                this.setSafeHTML(iconElement, `<mat-icon role="img" class="mat-icon notranslate google-symbols mat-ligature-font mat-icon-no-color" aria-hidden="true" data-mat-icon-type="font" data-mat-icon-name="cloud" fonticon="cloud"></mat-icon>`);
                 iconElement.title = 'Carpetas sincronizadas con tu cuenta de Google.';
             } else {
-                iconElement.innerHTML = `<mat-icon role="img" class="mat-icon notranslate google-symbols mat-ligature-font mat-icon-no-color" aria-hidden="true" data-mat-icon-type="font" data-mat-icon-name="cloud_off" fonticon="cloud_off"></mat-icon>`;
+                this.setSafeHTML(iconElement, `<mat-icon role="img" class="mat-icon notranslate google-symbols mat-ligature-font mat-icon-no-color" aria-hidden="true" data-mat-icon-type="font" data-mat-icon-name="cloud_off" fonticon="cloud_off"></mat-icon>`);
                 iconElement.title = 'Carpetas guardadas localmente en este dispositivo.';
             }
         }

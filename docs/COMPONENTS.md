@@ -18,7 +18,7 @@ La clase `Component` proporciona una estructura estandarizada para crear element
 
 ---
 
-## Componentes de la Aplicación
+## Componentes de la Aplicación (Legacy y Nuevos)
 
 ### 1. Sidebar (`Sidebar.js`)
 
@@ -28,7 +28,18 @@ El contenedor principal que se desliza desde la izquierda o se integra en la bar
 - **Estado**: Controla qué sección está visible (`create-folder-container`, `search-conversations-container`).
 - **Plantilla**: Utiliza un literal de plantilla (Template String) que reemplaza al antiguo `sidebar.html` cargado asíncronamente.
 
-### 2. FolderList (`FolderList.js`)
+### 2. RightPanel (`src/scripts/components/RightPanel.js`) - **Nuevo**
+
+El `RightPanel` es un nuevo panel lateral que convive con el `Sidebar` original. Ofrece una experiencia de usuario más rica y autocontenida en el lado derecho de la pantalla.
+
+- **Responsabilidad**: Renderiza una interfaz completa con una vista de "grid" para las carpetas y una lista detallada de conversaciones. Incluye su propia barra de herramientas con búsqueda, configuraciones y acciones masivas.
+- **Estado**: Gestiona internamente la vista actual (home, vista de carpeta), el término de búsqueda, el modo de selección múltiple (`isBulkMode`), y las configuraciones de apariencia.
+- **Renderizado**: A diferencia de los componentes más antiguos, `RightPanel` genera su HTML y el de sus sub-elementos (cards de carpetas, items de conversación) a través de métodos internos (`renderFolderCard`, `renderConversationItem`) en lugar de delegar a componentes hijos.
+- **Interacción**: Maneja eventos complejos como redimensionamiento del panel, menús contextuales para carpetas, edición de etiquetas y títulos, y acciones en lote (mover/eliminar).
+- **Autenticación**: Integra `AuthService` para mostrar información del usuario y gestionar la sincronización.
+
+
+### 3. FolderList (`FolderList.js`)
 
 Renderiza la lista jerárquica de carpetas.
 
@@ -36,7 +47,7 @@ Renderiza la lista jerárquica de carpetas.
 - **Hijos**: Instancia un `ConversationList` para cada carpeta.
 - **Interacción**: Maneja la expansión/contracción de carpetas y delega el modo de edición de nombre a `EventHandler`.
 
-### 3. ConversationList (`ConversationList.js`)
+### 4. ConversationList (`ConversationList.js`)
 
 Renderiza la lista de conversaciones dentro de una carpeta.
 
@@ -44,7 +55,7 @@ Renderiza la lista de conversaciones dentro de una carpeta.
 - **Drag & Drop**: Configura los eventos `dragstart`, `dragover`, `drop` en los elementos `<li>` y el contenedor `<ul>` para permitir reordenamiento y movimiento entre carpetas.
 - **Navegación**: Contiene la lógica crítica `openChat(id)` que simula la navegación en la SPA de Gemini buscando el elemento en el historial o recargando la página si no se encuentra.
 
-### 4. FolderIndicator (`FolderIndicatorComponents.js` - _No Refactorizado a Clase Component_)
+### 5. FolderIndicator (`FolderIndicatorComponents.js` - _No Refactorizado a Clase Component_)
 
 Muestra una pequeña etiqueta visual en la parte superior del chat indicando a qué carpeta pertenece la conversación actual.
 

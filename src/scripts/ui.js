@@ -70,7 +70,10 @@ export default class UI {
     }
 
     async addToggleButton(eventHandler, folderManager) {
-        const insertionPoint = this.geminiAdapter.getSidebarInsertionPoint();
+        const insertionPoint = this.geminiAdapter.getSidebarInsertionPoint() || {
+            element: document.querySelector('nav') || document.body.firstChild,
+            position: 'after'
+        };
         
         if (insertionPoint) {
             const { element: anchorElement, position } = insertionPoint;
@@ -98,7 +101,7 @@ export default class UI {
                 button.setAttribute('aria-label', 'Organizador de Conversaciones');
                 button.setAttribute('aria-disabled', 'false');
 
-                button.innerHTML = `
+                this.sidebarComponent.setSafeHTML(button, `
                     <div matlistitemicon="" class="mat-mdc-list-item-icon icon-container mdc-list-item__start" style="margin-left: 0px;margin-right: 0px;">
                         <mat-icon role="img" class="mat-icon notranslate gds-icon-l google-symbols mat-ligature-font mat-icon-no-color ng-star-inserted" aria-hidden="true" data-mat-icon-type="font" data-mat-icon-name="folder_open" fonticon="folder_open"></mat-icon>
                     </div>
@@ -108,7 +111,7 @@ export default class UI {
                         </span>
                     </span>
                     <div class="mat-focus-indicator"></div>
-                `;
+                `);
 
                 ourButtonWrapper.appendChild(button);
                 
@@ -119,6 +122,9 @@ export default class UI {
                 }
                 
                 this.toggleButton = button;
+            } else if (ourButtonWrapper.parentNode !== anchorElement.parentNode) {
+                // If it exists but in the wrong place (Gemini updated DOM)
+                anchorElement.after(ourButtonWrapper);
             }
 
             if (!this.sidebarComponent.element) {
@@ -142,7 +148,11 @@ export default class UI {
     }
 
     async addRightPanelTab() {
-        if (!this.rightPanelComponent.element) {
+        if (!this.rightPanelComponent.element || !document.body.contains(this.rightPanelComponent.element)) {
+            // Force re-creation if the element exists but was detached
+            if (this.rightPanelComponent.element) {
+                this.rightPanelComponent.element = null;
+            }
             this.rightPanelComponent.mount(document.body);
         }
     }

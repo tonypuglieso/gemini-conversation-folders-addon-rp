@@ -1,5 +1,5 @@
 // Importamos la clase Storage desde el archivo correspondiente.
-import Storage from '../src/scripts/storage.js';
+import Storage from '../src/scripts/services/Storage.js';
 
 document.addEventListener('DOMContentLoaded', () => {
     try {

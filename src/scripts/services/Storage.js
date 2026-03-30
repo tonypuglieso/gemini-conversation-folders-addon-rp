@@ -14,15 +14,19 @@ export default class  Storage {
         return this; // Devolvemos la instancia
     }
 
+    get area() {
+        return this.storageArea || chrome.storage.local;
+    }
+
     async getFolders() {
-        // Usamos la propiedad dinámica 'storageArea'
-        const data = await this.storageArea.get(this.key);
+        if (!chrome.runtime?.id) return {};
+        const data = await this.area.get(this.key);
         return data[this.key] || {};
     }
 
     async saveFolders(folders) {
-        // Usamos la propiedad dinámica 'storageArea'
-        return this.storageArea.set({ [this.key]: folders });
+        if (!chrome.runtime?.id) return;
+        return this.area.set({ [this.key]: folders });
     }
 
     /**
@@ -30,6 +34,7 @@ export default class  Storage {
      * @returns {Promise<boolean>} - true si la sincronización está habilitada, false en caso contrario.
      */
     async getSyncEnabled() {
+        if (!chrome.runtime?.id) return false;
         const data = await chrome.storage.sync.get('syncEnabled');
         return data.syncEnabled || false;
     }
@@ -39,28 +44,48 @@ export default class  Storage {
      * @param {boolean} enabled - El estado de la sincronización.
      */
     async setSyncEnabled(enabled) {
+        if (!chrome.runtime?.id) return;
         return chrome.storage.sync.set({ syncEnabled: enabled });
     }
 
     async getHasSeenOnboarding() {
-        const data = await this.storageArea.get('hasSeenOnboarding');
+        if (!chrome.runtime?.id) return true; // Asumir visto si falla el contexto para no molestar
+        const data = await this.area.get('hasSeenOnboarding');
         return data.hasSeenOnboarding || false;
     }
 
     async setHasSeenOnboarding(seen) {
-        return this.storageArea.set({ hasSeenOnboarding: seen });
+        if (!chrome.runtime?.id) return;
+        return this.area.set({ hasSeenOnboarding: seen });
     }
 
     async getSettings() {
-        const data = await this.storageArea.get('gemini_organizer_settings');
-        return data.gemini_organizer_settings || {
-            density: 'standard',
+        if (!chrome.runtime?.id) return {
+            density: 'compact',
             panelWidth: 340,
-            foldersHeight: 38
+            foldersHeight: 40
+        };
+        const data = await this.area.get('gemini_organizer_settings');
+        return data.gemini_organizer_settings || {
+            density: 'compact',
+            panelWidth: 340,
+            foldersHeight: 40
         };
     }
 
     async saveSettings(settings) {
-        return this.storageArea.set({ gemini_organizer_settings: settings });
+        if (!chrome.runtime?.id) return;
+        return this.area.set({ gemini_organizer_settings: settings });
     }
-}
+
+    async getFolderOrder() {
+        if (!chrome.runtime?.id) return [];
+        const data = await this.area.get('folderOrder');
+        return data.folderOrder || [];
+    }
+
+    async saveFolderOrder(order) {
+        if (!chrome.runtime?.id) return;
+        return this.area.set({ folderOrder: order });
+    }
+}

@@ -32,17 +32,14 @@ if (window.geminiOrganizerAppInstance) {
       );
 
       this.folderManager.setGeminiAdapter(this.ui.geminiAdapter);
-      this.folderManager.setGeminiAdapter(this.ui.geminiAdapter);
       this.folderManager.setEventHandler(this.eventHandler);
       this.folderManager.setDragAndDropHandler(this.dragAndDropHandler);
       this.ui.rightPanelComponent.setDragAndDropHandler(this.dragAndDropHandler);
 
-
-
+      this.isInitializing = false;
       this.observer = new MutationObserver(this.handleMutations.bind(this));
 
       chrome.storage.onChanged.addListener(this.handleStorageChange.bind(this));
-
       chrome.runtime.onMessage.addListener(this.handleMessage.bind(this));
 
       this.lastUrl = window.location.href;
@@ -53,44 +50,57 @@ if (window.geminiOrganizerAppInstance) {
      * Inicializa la aplicación.
      */
     async init() {
-      // Asegura que el contenedor de notificaciones (toast) exista
-      if (!document.getElementById("gemini-organizer-toast-container")) {
-        const toastContainer = document.createElement("div");
-        toastContainer.id = "gemini-organizer-toast-container";
-        document.body.appendChild(toastContainer);
-      }
+      if (!chrome.runtime?.id) return;
+      this.isInitializing = true;
+      try {
+        // Asegura que el contenedor de notificaciones (toast) exista
+        if (!document.getElementById("gemini-organizer-toast-container")) {
+          const toastContainer = document.createElement("div");
+          toastContainer.id = "gemini-organizer-toast-container";
+          document.body.appendChild(toastContainer);
+        }
 
-      // 1. Configura el área de almacenamiento (sync o local)
-      await this.setupStorage();
+        // 1. Configura el área de almacenamiento (sync o local)
+        await this.setupStorage();
 
-      // 2. Load User Settings (Density, Dimensions)
-      await this.ui.rightPanelComponent.loadSettings();
+        // 2. Load User Settings (Density, Dimensions)
+        await this.ui.rightPanelComponent.loadSettings();
 
-      // Check onboarding
-      const hasSeenOnboarding = await this.storage.getHasSeenOnboarding();
-      if (!hasSeenOnboarding) {
-        const tour = new OnboardingTour({
-          onClose: async () => {
-            await this.storage.setHasSeenOnboarding(true);
-            // Abrir sidebar automáticamente para que el usuario vea la herramienta
-            if (
-              this.ui.sidebar &&
-              this.ui.sidebar.classList.contains("hidden")
-            ) {
-              this.ui.toggleSidebarVisibility();
-            }
-          },
-        });
-        tour.mount(document.body);
-      }
+        // Check onboarding
+        const hasSeenOnboarding = await this.storage.getHasSeenOnboarding();
+        if (!hasSeenOnboarding) {
+          const tour = new OnboardingTour({
+            onClose: async () => {
+              await this.storage.setHasSeenOnboarding(true);
+              // Abrir sidebar automáticamente para que el usuario vea la herramienta
+              if (
+                this.ui.sidebar &&
+                this.ui.sidebar.classList.contains("hidden")
+              ) {
+                this.ui.toggleSidebarVisibility();
+              }
+            },
+          });
+          tour.mount(document.body);
+        }
 
-      // 2. Espera a que la página esté inactiva para añadir la UI principal
-      window.requestIdleCallback(async () => {
-        // 3. Inyecta la UI (Sidebar, Botón)
-        await this.ui.addToggleButton(this.eventHandler, this.folderManager);
+        // 2. Inyecta la UI (Primero el Panel Derecho para evitar bloqueos)
         await this.ui.addRightPanelTab();
+        
+        // 3. Intenta inyectar el botón en la barra lateral izquierda
+        try {
+          await this.ui.addToggleButton(this.eventHandler, this.folderManager);
+        } catch (e) {
+          console.warn("Gemini Organizer: No se pudo inyectar el botón en el sidebar izquierdo.", e);
+        }
 
-        // 4. Carga y muestra las carpetas (ahora que la UI existe)
+        // Ensure sidebar element is in the DOM before loading folders
+        // (addToggleButton may have failed silently, but folders-list-ul must exist)
+        if (!this.ui.sidebar) {
+            await this.ui.initializeSidebar();
+        }
+
+        // 4. Carga y muestra las carpetas
         await this.folderManager.loadAndDisplayFolders();
         await this.ui.renderRightPanel(this.folderManager.folders, this.folderManager.allUniqueConversations);
 
@@ -105,7 +115,13 @@ if (window.geminiOrganizerAppInstance) {
           childList: true,
           subtree: true,
         });
-      });
+
+        console.info("Gemini Organizer: Inicialización completada con éxito.");
+      } catch (e) {
+        console.error("Gemini Organizer: Error durante init():", e);
+      } finally {
+        this.isInitializing = false;
+      }
     }
 
     /**
@@ -141,6 +157,7 @@ if (window.geminiOrganizerAppInstance) {
      * y para actualizar el estado de "guardado" de las conversaciones.
      */
     async handleMutations() {
+      if (!chrome.runtime?.id) return;
       if (this.isHandlingMutations) return;
       this.isHandlingMutations = true;
 
@@ -149,19 +166,21 @@ if (window.geminiOrganizerAppInstance) {
 
       try {
         // Comprueba si nuestro botón principal sigue en el DOM
-        const toggleButtonWrapper = document.getElementById(
-          "gemini-organizer-wrapper"
-        );
-        if (
-          !toggleButtonWrapper ||
-          !document.body.contains(toggleButtonWrapper)
-        ) {
-          // Si no está, Gemini ha refrescado la UI. Lo re-inyectamos todo.
-          await this.ui.addToggleButton(this.eventHandler, this.folderManager);
-          await this.ui.addRightPanelTab();
-          await this.folderManager.loadAndDisplayFolders(); // Recarga las carpetas
-          await this.ui.renderRightPanel(this.folderManager.folders, this.folderManager.allUniqueConversations);
-          this.updateSidebarSyncStatus();
+        console.log("Gemini Organizer: Detectada mutación, verificando UI...");
+        const leftButton = document.getElementById("gemini-organizer-wrapper");
+        const rightPanel = document.getElementById("gemini-organizer-right-panel-root");
+
+        if (!leftButton || !document.body.contains(leftButton)) {
+           console.log("Gemini Organizer: Re-inyectando botón izquierdo.");
+           await this.ui.addToggleButton(this.eventHandler, this.folderManager);
+           this.updateSidebarSyncStatus();
+        }
+
+        if (!rightPanel || !document.body.contains(rightPanel)) {
+           console.log("Gemini Organizer: Re-inyectando panel derecho.");
+           await this.ui.addRightPanelTab();
+           await this.folderManager.loadAndDisplayFolders();
+           await this.ui.renderRightPanel(this.folderManager.folders, this.folderManager.allUniqueConversations);
         }
 
         // Actualiza los listeners de arrastrar y soltar y los iconos de "guardado"
@@ -208,6 +227,7 @@ if (window.geminiOrganizerAppInstance) {
      * Escucha cambios en el almacenamiento (local o sync).
      */
     async handleStorageChange(changes, namespace) {
+      if (!chrome.runtime?.id) return;
       // Si la configuración de sync cambia, o los datos de sync cambian
       if (
         namespace === "sync" &&

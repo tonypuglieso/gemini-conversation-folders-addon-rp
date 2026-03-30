@@ -37,7 +37,8 @@
   "web_accessible_resources": [
     {
       "resources": [
-        "src/templates/*.html"
+        "src/templates/*.html",
+        "src/assets/*.json"
       ],
       "matches": [
         "https://gemini.google.com/*"

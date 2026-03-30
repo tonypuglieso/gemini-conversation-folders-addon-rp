@@ -1,6 +1,11 @@
+import Component from '../core/Component.js';
 import { waitForElement } from '../utils.js';
 
-export default class FolderIndicator {
+export default class FolderIndicator extends Component {
+    constructor(props = {}) {
+        super(props);
+    }
+
     async display(folderName) {
         const existingIndicator = document.getElementById('gemini-organizer-folder-indicator');
         if (existingIndicator) {
@@ -37,13 +42,17 @@ export default class FolderIndicator {
         // SVG Icon (Material Folder Shape, Stable)
         const folderSvg = `<svg viewBox="0 0 24 24" width="16" height="16" fill="#fcc934" style="margin-right: 6px;"><path d="M10 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2h-8l-2-2z"></path></svg>`;
 
-        indicator.innerHTML = `
+        this.setSafeHTML(indicator, `
             ${folderSvg}
             <span style="font-size: 13px; font-weight: 500; color: var(--rp-text-primary);">${folderName}</span>
-        `;
+        `);
 
         // 3. Insertamos nuestro indicador al principio de ese contenedor.
         targetContainer.prepend(indicator);
+    }
+
+    render() {
+        return ''; // Custom display logic instead of standard mount
     }
 }
 

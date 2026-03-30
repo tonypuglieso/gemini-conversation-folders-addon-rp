@@ -28,22 +28,33 @@
 }
 
 
-#gemini-organizer-right-panel {
+#gemini-organizer-right-panel-root {
     position: fixed;
+    top: 0;
+    right: 0;
+    width: 0; /* Root is just an anchor */
+    height: 100vh;
+    z-index: 2001;
+    z-index: 9999999; /* MAXIMUM PRIORITY */
+    overflow: visible; /* Crucial to show children outside the 0-width root */
+    font-family: 'Google Sans', 'Roboto', sans-serif;
+    color: var(--rp-text-primary);
+    line-height: 1.5;
+}
+
+#gemini-organizer-right-panel {
+    position: absolute;
     top: 0;
     right: 0;
     width: 340px;
     height: 100vh;
     background-color: var(--rp-bg);
     box-shadow: -4px 0 15px rgba(0, 0, 0, 0.4);
-    z-index: 2001;
     display: flex;
     flex-direction: column;
     overflow: visible;
     transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-    font-family: 'Google Sans', 'Roboto', sans-serif;
-    color: var(--rp-text-primary);
-    line-height: 1.5;
+    z-index: 9999998;
     min-width: 300px;
     max-width: 700px;
 }
@@ -53,8 +64,7 @@
 #gemini-organizer-right-panel.density-compact {
     --rp-convo-padding: 4px 10px;
     --rp-convo-font: 12px;
-    --rp-folder-height: 54px;
-    --rp-section-gap: 10px;
+    /* Folders and section gaps remain standard as requested */
 }
 
 #gemini-organizer-right-panel .right-panel-resizer {
@@ -287,7 +297,7 @@
     border-radius: 12px;
     width: 220px;
     box-shadow: 0 8px 24px rgba(0, 0, 0, 0.6);
-    z-index: 2005;
+    z-index: 10000001;
     padding: 8px 0;
     animation: fadeIn 0.2s ease-out;
 }
@@ -466,9 +476,9 @@
 /* Grilla de Carpetas - Pill Shape */
 #gemini-organizer-right-panel .folders-grid {
     display: grid;
-    grid-template-columns: repeat(3, 1fr); /* 3 Fixed Columns */
-    gap: 10px;
-    width: 100%;
+    grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); /* Better sizing */
+    gap: 12px;
+    padding: 4px;
 }
 
 /* Tag Cloud Styles */
@@ -596,6 +606,12 @@
     white-space: nowrap;
 }
 
+#gemini-organizer-right-panel .folder-count {
+    font-size: 9px;
+    color: var(--rp-text-secondary);
+    opacity: 0.8;
+}
+
 
 
 
@@ -603,20 +619,25 @@
     position: absolute;
     top: 4px;
     right: 4px;
-    background: transparent !important;
+    background: rgba(0, 0, 0, 0.4) !important;
     border: none !important;
-    color: var(--rp-text-secondary);
+    color: var(--rp-text-primary);
     cursor: pointer;
-    padding: 2px;
-    border-radius: 4px;
-    opacity: 0.5;
-    transition: all 0.2s;
+    padding: 3px;
+    border-radius: 50%;
+    opacity: 0; /* Hidden by default */
+    transform: scale(0.8);
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
     z-index: 2;
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
 
-#gemini-organizer-right-panel .folder-menu-trigger:hover {
+#gemini-organizer-right-panel .folder-card:hover .folder-menu-trigger,
+#gemini-organizer-right-panel .folder-card.selected .folder-menu-trigger {
     opacity: 1;
-    background: rgba(255, 255, 255, 0.1) !important;
+    transform: scale(1);
 }
 
 #gemini-organizer-right-panel .folder-menu-trigger svg {
@@ -696,6 +717,306 @@
     border: 0;
     border-top: 1px solid var(--rp-border);
     margin: 20px 0 10px;
+}
+
+/* Premium Edit Panel */
+.premium-edit-panel,
+#folder-edit-panel {
+    position: fixed;
+    background: #202124;
+    border: 1px solid rgba(255, 255, 255, 0.08); /* Much more subtle border */
+    border-radius: 16px;
+    width: 280px;
+    box-shadow: 0 12px 32px rgba(0, 0, 0, 0.7);
+    z-index: 10000002;
+    padding: 16px;
+    animation: slideIn 0.2s ease-out;
+    color: var(--rp-text-primary);
+    font-family: inherit;
+}
+
+@keyframes slideIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.edit-panel-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 16px;
+}
+
+.edit-panel-header h3 {
+    margin: 0;
+    font-size: 16px;
+    font-weight: 500;
+}
+
+.save-btn, .delete-btn, .close-panel-btn {
+    border: none !important;
+    border-radius: 100px !important; /* Pill shape */
+    padding: 10px 24px !important;
+    font-size: 14px !important;
+    font-weight: 500 !important;
+    cursor: pointer;
+    transition: all 0.2s;
+    background: transparent;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    font-family: inherit;
+    outline: none !important;
+}
+
+.save-btn.primary {
+    background: transparent !important; /* Transparent background */
+    color: #a8c7fa !important; /* Gemini blue */
+    padding: 10px 16px !important;
+}
+
+.save-btn.primary:hover {
+    background: rgba(168, 199, 250, 0.1) !important;
+}
+
+.delete-btn.danger {
+    color: #f28b82 !important; /* Subtle red */
+    padding: 10px 16px !important;
+}
+
+.delete-btn.danger:hover {
+    background: rgba(242, 139, 130, 0.1) !important;
+}
+
+.close-panel-btn {
+    padding: 8px !important;
+    color: #a8c7fa !important;
+    border-radius: 50% !important;
+}
+
+.edit-panel-body {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.edit-row {
+    display: flex;
+    gap: 12px;
+    align-items: center;
+}
+
+.emoji-input-wrapper-btn {
+    width: 44px;
+    height: 44px;
+    background: var(--rp-input-bg);
+    border: 1px solid var(--rp-border);
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    font-size: 24px;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.emoji-input-wrapper-btn:hover {
+    border-color: var(--rp-accent);
+    background: rgba(255, 255, 255, 0.08);
+    transform: scale(1.05);
+}
+
+/* Manual Emoji Picker (Glassmorphism) */
+.manual-emoji-picker-container, .manual-emoji-picker-container * {
+    box-sizing: border-box;
+}
+
+.manual-emoji-picker-container {
+    width: 100%; /* Match parent panel width */
+    height: 380px;
+    background: rgba(30, 31, 32, 0.98);
+    backdrop-filter: blur(16px);
+    border: 1px solid rgba(255, 255, 255, 0.08); /* Subtle border */
+    border-radius: 0 0 12px 12px;
+    box-shadow: 0 12px 64px rgba(0, 0, 0, 0.8);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    animation: popIn 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.1);
+    z-index: 2000000;
+    position: absolute;
+    left: 0;
+}
+
+@keyframes popIn {
+    from { opacity: 0; transform: translateY(5px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.emoji-picker-header {
+    padding: 10px;
+    border-bottom: 1px solid var(--rp-border);
+    background: rgba(255, 255, 255, 0.02);
+}
+
+.category-tabs {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 10px;
+    padding: 0 4px;
+    gap: 2px;
+}
+
+.cat-tab {
+    background: transparent;
+    border: none;
+    font-size: 16px;
+    padding: 6px;
+    cursor: pointer;
+    border-radius: 6px;
+    transition: all 0.2s;
+    opacity: 0.6;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex: 1;
+}
+
+.cat-tab:hover, .cat-tab.active {
+    background: rgba(255, 255, 255, 0.12);
+    opacity: 1;
+    transform: scale(1.05);
+}
+
+.cat-tab.active {
+    background: rgba(255, 255, 255, 0.15);
+}
+
+.emoji-search-wrapper {
+    padding: 0 4px;
+}
+
+#emoji-search-input {
+    width: 100%;
+    background: var(--rp-input-bg);
+    border: 1px solid var(--rp-border);
+    border-radius: 20px;
+    padding: 8px 14px;
+    color: var(--rp-text-primary);
+    font-size: 13px;
+    outline: none;
+}
+
+#emoji-search-input:focus {
+    border-color: var(--rp-accent);
+}
+
+.emoji-grid-viewport {
+    flex: 1;
+    overflow-y: scroll; /* Force vertical scrollbar always */
+    overflow-x: hidden; /* Prevent horizontal scroll */
+    padding: 8px;
+    min-height: 250px;
+}
+
+.empty-recents {
+    grid-column: 1 / -1;
+    text-align: center;
+    padding: 40px 20px;
+    color: var(--rp-text-secondary);
+    font-size: 13px;
+    opacity: 0.6;
+}
+
+.emoji-grid {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr); /* 7 columns for better fit in 280px */
+    gap: 4px;
+}
+
+.emoji-item {
+    background: transparent;
+    border: none;
+    font-size: 20px;
+    padding: 4px;
+    cursor: pointer;
+    border-radius: 6px;
+    transition: background 0.15s, transform 0.1s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.emoji-item:hover {
+    background: rgba(255, 255, 255, 0.1);
+    transform: scale(1.2);
+}
+
+.emoji-picker-container.loading {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+    color: var(--rp-text-secondary);
+    font-size: 13px;
+}
+
+#edit-folder-name {
+    flex: 1;
+    background: var(--rp-input-bg);
+    border: 1px solid var(--rp-border);
+    border-radius: 8px;
+    padding: 10px 12px;
+    color: var(--rp-text-primary);
+    font-size: 14px;
+    outline: none;
+    transition: border-color 0.2s;
+}
+
+#edit-folder-name:focus {
+    border-color: var(--rp-accent);
+}
+
+.edit-actions {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-top: 8px;
+}
+
+.edit-actions button {
+    border: none;
+    padding: 8px 16px;
+    border-radius: 8px;
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    transition: filter 0.2s, background 0.2s;
+    font-family: inherit;
+}
+
+.edit-actions button:hover {
+    filter: brightness(1.1);
+}
+
+.edit-actions button.primary {
+    background: var(--rp-accent);
+    color: #1e1f20;
+}
+
+.edit-actions button.danger {
+    background: transparent;
+    color: #f28b82;
+    padding-left: 0;
+}
+
+.edit-actions button.danger:hover {
+    background: rgba(242, 139, 130, 0.1);
+    padding-left: 8px;
 }
 
 /* Conversation List */
@@ -796,11 +1117,6 @@
     display: inline-flex;
     align-items: center;
     height: 18px;
-}
-
-#gemini-organizer-right-panel .badge.tag:hover {
-    color: #ff6b6b; /* Indicate deletion on hover */
-    text-decoration: line-through;
 }
 
 #gemini-organizer-right-panel .add-tag-btn,
@@ -918,6 +1234,23 @@
     color: #1e1f20;
 }
 
+.bulk-bar-actions button.badge.tag {
+    background: rgba(255, 255, 255, 0.05);
+    color: var(--rp-text-secondary);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.badge.tag:hover {
+    background: rgba(168, 199, 250, 0.1);
+    color: #a8c7fa;
+    border-color: rgba(168, 199, 250, 0.3);
+}
+
+.badge.tag.is-deleting-mode { /* Potential future use if holding modifier */
+    color: #f28b82;
+    text-decoration: line-through;
+}
+
 .bulk-bar-actions button.danger {
     background: rgba(242, 139, 130, 0.1);
     color: #f28b82;
@@ -931,15 +1264,16 @@
 
 
 /* Floating Drawer Toggle Tap */
-#gemini-organizer-right-panel .drawer-handle {
+#gemini-organizer-right-panel-root .drawer-handle {
     position: absolute;
-    left: -40px; /* Wider handle like mockup */
+    left: -40px; 
     top: 50%;
     transform: translateY(-50%);
     width: 40px;
-    height: 80px;
-    background: var(--rp-bg);
-    border: none;
+    height: 48px;
+    background: #202124 !important; /* Solid background for visibility */
+    border: 1px solid var(--rp-border) !important;
+    border-right: none !important;
     border-radius: 12px 0 0 12px;
     display: flex;
     align-items: center;
@@ -947,22 +1281,22 @@
     cursor: pointer;
     box-shadow: -4px 0 10px rgba(0, 0, 0, 0.3);
     transition: all 0.2s;
-    z-index: 10;
+    z-index: 9999999;
 }
 
-#gemini-organizer-right-panel .drawer-handle:hover {
+#gemini-organizer-right-panel-root .drawer-handle:hover {
     background: #2a2b2d;
     width: 44px;
     left: -44px;
 }
 
-#gemini-organizer-right-panel .drawer-handle .handle-inner {
+#gemini-organizer-right-panel-root .drawer-handle .handle-inner {
     display: flex;
     align-items: center;
     justify-content: center;
 }
 
-#gemini-organizer-right-panel .drawer-handle svg {
+#gemini-organizer-right-panel-root .drawer-handle svg {
     width: 20px;
     height: 20px;
     color: var(--rp-text-primary);

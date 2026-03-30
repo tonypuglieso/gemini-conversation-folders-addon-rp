@@ -8,29 +8,29 @@ export default class EventHandler {
     }
 
     addEventListeners() {
+        // Use .onclick assignment to prevent duplicate listeners on re-injections from MutationObserver
         const createFolderSectionBtn = document.getElementById('create-folder-section-btn');
         if (createFolderSectionBtn) {
-            createFolderSectionBtn.addEventListener('click', () => this.ui.toggleSectionVisibility('create-folder-container'));
+            createFolderSectionBtn.onclick = () => this.ui.toggleSectionVisibility('create-folder-container');
         }
 
         const searchSectionBtn = document.getElementById('search-section-btn');
         if (searchSectionBtn) {
-            searchSectionBtn.addEventListener('click', () => this.ui.toggleSectionVisibility('search-conversations-container'));
+            searchSectionBtn.onclick = () => this.ui.toggleSectionVisibility('search-conversations-container');
         }
-
 
         const createFolderBtn = document.getElementById('create-folder-btn');
         if (createFolderBtn) {
-            createFolderBtn.addEventListener('click', this.handleCreateFolder.bind(this));
+            createFolderBtn.onclick = this.handleCreateFolder.bind(this);
         }
 
         const searchInput = document.getElementById('search-conversations-input');
         if (searchInput) {
-            searchInput.addEventListener('input', this.ui.filterConversationsAndFolders.bind(this.ui));
+            searchInput.oninput = this.ui.filterConversationsAndFolders.bind(this.ui);
         }
 
         if (this.ui.toggleButton) {
-            this.ui.toggleButton.addEventListener('click', this.ui.toggleSidebarVisibility.bind(this.ui));
+            this.ui.toggleButton.onclick = this.ui.toggleSidebarVisibility.bind(this.ui);
         }
     }
 

@@ -15,12 +15,31 @@ export default class FolderManager {
     async loadAndDisplayFolders() {
         const openFolderStates = this.ui.getOpenFolderStates();
         const folders = await this.storage.getFolders();
+        const folderOrder = await this.storage.getFolderOrder();
         
-        // Update instance cache so other components (like RightPanel) can access data
-        this.folders = folders;
-        this.allUniqueConversations = this._extractUniqueConversations(folders);
+        // Re-order folders based on the manual order list
+        const orderedFolders = {};
+        if (folderOrder && folderOrder.length > 0) {
+            folderOrder.forEach(name => {
+                if (folders[name]) {
+                    orderedFolders[name] = folders[name];
+                }
+            });
+            // Add any folders that might be missing from the order (safety)
+            for (const name in folders) {
+                if (!orderedFolders[name]) {
+                    orderedFolders[name] = folders[name];
+                }
+            }
+        } else {
+            // First time: capture current order
+            Object.assign(orderedFolders, folders);
+            await this.storage.saveFolderOrder(Object.keys(folders));
+        }
 
-        this.ui.renderFolders(folders, openFolderStates, this.eventHandler, this.dragAndDropHandler);
+        this.folders = orderedFolders;
+        this.allUniqueConversations = this._extractUniqueConversations(orderedFolders);
+        this.ui.renderFolders(orderedFolders, openFolderStates, this.eventHandler, this.dragAndDropHandler);
     }
 
     _extractUniqueConversations(folders) {
@@ -42,6 +61,26 @@ export default class FolderManager {
         return Array.from(conversationsMap.values());
     }
 
+    async getUncategorizedConversations() {
+        const allGeminiConv = this.geminiAdapter ? await this.geminiAdapter.getConversations() : [];
+        const folders = await this.storage.getFolders();
+        const categorizedIds = new Set();
+        
+        for (const f in folders) {
+            folders[f].forEach(c => categorizedIds.add(c.id));
+        }
+        
+        return allGeminiConv.filter(c => !categorizedIds.has(c.id));
+    }
+
+    async reorderFolders(fromIndex, toIndex) {
+        const folderOrder = await this.storage.getFolderOrder();
+        const [movedItem] = folderOrder.splice(fromIndex, 1);
+        folderOrder.splice(toIndex, 0, movedItem);
+        await this.storage.saveFolderOrder(folderOrder);
+        return folderOrder;
+    }
+
     async createFolder(folderName) {
         if (!folderName) {
             throw new Error("El nombre de la carpeta no puede estar vacío.");
@@ -55,6 +94,12 @@ export default class FolderManager {
 
         storedFolders[folderName] = [];
         await this.storage.saveFolders(storedFolders);
+        
+        // Add to order
+        const folderOrder = await this.storage.getFolderOrder();
+        folderOrder.push(folderName);
+        await this.storage.saveFolderOrder(folderOrder);
+
         return true;
     }
 
@@ -80,9 +125,31 @@ export default class FolderManager {
 
         delete storedFolders[originalFolderName];
         storedFolders[newFolderName] = folderContent;
-
         await this.storage.saveFolders(storedFolders);
+
+        // Update name in order list
+        const folderOrder = await this.storage.getFolderOrder();
+        const idx = folderOrder.indexOf(originalFolderName);
+        if (idx !== -1) {
+            folderOrder[idx] = newFolderName;
+            await this.storage.saveFolderOrder(folderOrder);
+        }
+
         return true;
+    }
+
+    async updateConversationMetadata(folderName, convId, newTitle, newTags) {
+        const folders = await this.storage.getFolders();
+        if (folders[folderName]) {
+            const conv = folders[folderName].find(c => c.id === convId);
+            if (conv) {
+                conv.title = newTitle || conv.title;
+                conv.tags = newTags || conv.tags || [];
+                await this.storage.saveFolders(folders);
+                return true;
+            }
+        }
+        return false;
     }
 
     async deleteFolder(folderName) {
@@ -95,6 +162,12 @@ export default class FolderManager {
         if (storedFolders[folderName]) {
             delete storedFolders[folderName];
             await this.storage.saveFolders(storedFolders);
+            
+            // Remove from order list
+            const folderOrder = await this.storage.getFolderOrder();
+            const newOrder = folderOrder.filter(n => n !== folderName);
+            await this.storage.saveFolderOrder(newOrder);
+
             return true;
         } else {
             throw new Error("La carpeta especificada no existe.");
@@ -115,6 +188,75 @@ export default class FolderManager {
         } else {
              throw new Error("La carpeta especificada no existe.");
         }
+    }
+
+    async addConversationToFolder(folderName, conversation) {
+        if (!folderName || !conversation?.id) {
+            return false;
+        }
+
+        const folders = await this.storage.getFolders();
+        if (!folders[folderName]) {
+            return false;
+        }
+
+        if (folders[folderName].some(conv => conv.id === conversation.id)) {
+            return true;
+        }
+
+        let conversationData = {
+            id: conversation.id,
+            title: conversation.title || 'Sin título',
+            url: conversation.url || window.location.href,
+            timestamp: conversation.timestamp || new Date().toLocaleString(),
+            tags: conversation.tags || []
+        };
+
+        if ((!conversation.title || !conversation.url) && this.geminiAdapter) {
+            const visibleConversation = this.geminiAdapter.getVisibleChats().find(chat => chat.id === conversation.id);
+            if (visibleConversation) {
+                conversationData = {
+                    ...conversationData,
+                    title: visibleConversation.title || conversationData.title,
+                    url: visibleConversation.url || conversationData.url
+                };
+            }
+        }
+
+        for (const folder of Object.values(folders)) {
+            const existingConversation = folder.find(conv => conv.id === conversation.id);
+            if (existingConversation) {
+                conversationData = {
+                    ...existingConversation,
+                    ...conversationData
+                };
+                break;
+            }
+        }
+
+        folders[folderName].push(conversationData);
+        await this.storage.saveFolders(folders);
+        return true;
+    }
+
+    async removeConversationFromFolder(folderName, convId) {
+        if (!folderName || !convId) {
+            return false;
+        }
+
+        const folders = await this.storage.getFolders();
+        if (!folders[folderName]) {
+            return false;
+        }
+
+        const originalLength = folders[folderName].length;
+        folders[folderName] = folders[folderName].filter(conv => conv.id !== convId);
+        if (folders[folderName].length === originalLength) {
+            return false;
+        }
+
+        await this.storage.saveFolders(folders);
+        return true;
     }
 
 
@@ -186,16 +328,29 @@ async findFolderForConversation(convId) {
 
     async renameConversation(folderName, convId, newTitle) {
         if (!newTitle) throw new Error("El título no puede estar vacío.");
+        
         const folders = await this.storage.getFolders();
-        if (folders[folderName]) {
-            const conv = folders[folderName].find(c => c.id === convId);
+        let found = false;
+
+        // Rename in all folders where it might exist
+        for (const f in folders) {
+            const conv = folders[f].find(c => c.id === convId);
             if (conv) {
-                const oldTitle = conv.title;
                 conv.title = newTitle;
-                await this.storage.saveFolders(folders);
-                showToast(`Renombrado: "${oldTitle}" -> "${newTitle}"`, 'success');
-                return true;
+                found = true;
             }
+        }
+
+        if (found) {
+            await this.storage.saveFolders(folders);
+            
+            // Sync with Gemini Native Sidebar
+            if (this.geminiAdapter) {
+                this.geminiAdapter.updateNativeChatTitle(convId, newTitle);
+            }
+
+            showToast(`Conversación renombrada a "${newTitle}"`, 'success');
+            return true;
         }
         return false;
     }
@@ -415,4 +570,4 @@ async findFolderForConversation(convId) {
     setDragAndDropHandler(dragAndDropHandler) {
         this.dragAndDropHandler = dragAndDropHandler;
     }
-}
+}

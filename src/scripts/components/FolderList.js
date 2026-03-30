@@ -35,10 +35,13 @@ export default class FolderList extends Component {
             return;
         }
 
-        listContainer.innerHTML = ''; // Clear
+        // Clear listContainer safely
+        while (listContainer.firstChild) {
+            listContainer.removeChild(listContainer.firstChild);
+        }
 
         if (!folders || Object.keys(folders).length === 0) {
-            listContainer.innerHTML = `
+            this.setSafeHTML(listContainer, `
                 <div class="empty-state-container">
                     <div class="empty-state-icon-wrapper">
                         <mat-icon role="img" class="mat-icon notranslate google-symbols mat-ligature-font mat-icon-no-color"
@@ -47,7 +50,7 @@ export default class FolderList extends Component {
                     </div>
                     <p class="empty-state-text">No tienes carpetas aún.</p>
                     <p class="empty-state-subtext">¡Crea una para empezar a organizar!</p>
-                </div>`;
+                </div>`);
             return;
         }
 
@@ -107,12 +110,12 @@ export default class FolderList extends Component {
         folderHeader.addEventListener('dragleave', dragAndDropHandler.handleDragLeave.bind(dragAndDropHandler));
         folderHeader.addEventListener('drop', dragAndDropHandler.handleDrop.bind(dragAndDropHandler));
 
-        folderHeader.innerHTML = `
+        this.setSafeHTML(folderHeader, `
             <span class="title gds-label-l gemini-folder-title" data-folder-name="${folderName}">${folderName}</span>
             <button class="edit-folder-btn" title="Renombrar carpeta: &quot;${folderName}&quot;" data-folder-name="${folderName}"><mat-icon role="img" class="mat-icon notranslate google-symbols mat-ligature-font mat-icon-no-color" aria-hidden="true" data-mat-icon-type="font" data-mat-icon-name="edit" fonticon="edit"></mat-icon></button>
             <button class="delete-folder-btn" title="Eliminar carpeta: &quot;${folderName}&quot;" data-folder-name="${folderName}"><mat-icon role="img" class="mat-icon notranslate google-symbols mat-ligature-font mat-icon-no-color" aria-hidden="true" data-mat-icon-type="font" data-mat-icon-name="delete" fonticon="delete"></mat-icon></button>
             <mat-icon role="img" class="mat-icon notranslate gds-icon-l google-symbols mat-ligature-font mat-icon-no-color gemini-expand-icon" aria-hidden="true" data-mat-icon-type="font" data-mat-icon-name="expand_more" fonticon="expand_more"></mat-icon>
-        `;
+        `);
 
         return folderHeader;
     }

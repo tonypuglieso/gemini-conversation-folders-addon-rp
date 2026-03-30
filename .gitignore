@@ -4,5 +4,3 @@ node_modules/
 dist/
 .agents/
 .backup/
-backup_bk/
-backup:bk
