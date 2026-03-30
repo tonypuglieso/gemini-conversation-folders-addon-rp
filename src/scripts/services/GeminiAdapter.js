@@ -33,6 +33,32 @@ export default class GeminiAdapter {
     }
 
     /**
+     * Scrapes the current sidebar for visible conversations.
+     * @returns {Array<{id: string, title: string, url: string}>}
+     */
+    getVisibleChats() {
+        const list = document.querySelector(this.selectors.chatHistoryList);
+        if (!list) return [];
+        
+        // Gemini conversations usually have this data attribute
+        const items = list.querySelectorAll('div[data-test-id="conversation"]');
+        return Array.from(items).map(item => {
+            const titleEl = item.querySelector('.conversation-title');
+            
+            // Extracting ID from JSLog is the most stable method
+            const jslog = item.getAttribute('jslog');
+            const match = jslog ? jslog.match(/["']c_([^"']+)["']/) : null;
+            const id = match ? match[1] : null;
+            
+            return {
+                id,
+                title: titleEl ? titleEl.textContent.trim() : 'Sin título',
+                url: id ? `https://gemini.google.com/app/${id}` : window.location.href
+            };
+        }).filter(c => c.id);
+    }
+
+    /**
      * Checks if the Gemini UI has fully loaded essential elements.
      * @returns {boolean}
      */
@@ -42,3 +68,4 @@ export default class GeminiAdapter {
                   document.querySelector(this.selectors.chatHistoryList));
     }
 }
+

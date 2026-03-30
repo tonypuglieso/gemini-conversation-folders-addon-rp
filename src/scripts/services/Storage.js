@@ -50,4 +50,17 @@ export default class  Storage {
     async setHasSeenOnboarding(seen) {
         return this.storageArea.set({ hasSeenOnboarding: seen });
     }
-}
+
+    async getSettings() {
+        const data = await this.storageArea.get('gemini_organizer_settings');
+        return data.gemini_organizer_settings || {
+            density: 'standard',
+            panelWidth: 340,
+            foldersHeight: 38
+        };
+    }
+
+    async saveSettings(settings) {
+        return this.storageArea.set({ gemini_organizer_settings: settings });
+    }
+}

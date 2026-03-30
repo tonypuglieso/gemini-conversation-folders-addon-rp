@@ -1,12 +1,7 @@
 let parentFolderMenuId = null;
 
 async function createFolderMenus() {
-    if (parentFolderMenuId) {
-        try {
-            await chrome.contextMenus.remove(parentFolderMenuId);
-        } catch (e) {
-        }
-    }
+    await new Promise(resolve => chrome.contextMenus.removeAll(resolve));
     parentFolderMenuId = null;
 
     // Crea el menú padre

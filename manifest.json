@@ -21,13 +21,15 @@
         "dist/main.js"
       ],
       "css": [
-        "src/styles/styles.css"
+        "src/styles/styles.css",
+        "src/styles/right-panel.css"
       ]
     }
   ],
   "permissions": [
     "storage",
-    "contextMenus"
+    "contextMenus",
+    "identity"
   ],
   "host_permissions": [
     "https://gemini.google.com/*"

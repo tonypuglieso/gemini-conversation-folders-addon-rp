@@ -681,24 +681,23 @@
 #gemini-organizer-folder-indicator {
     display: flex;
     align-items: center;
-    gap: 8px;
-    background-color: #e8f0fe;
-    color: #1967d2;
-    padding: 6px 16px;
-    border-radius: 20px;
+    background-color: rgba(138, 180, 248, 0.12); /* Subtle Gemini blue */
+    color: var(--rp-accent, #1967d2);
+    padding: 4px 12px;
+    border-radius: 12px;
     font-family: 'Google Sans', sans-serif;
-    font-size: 0.9em;
+    font-size: 13px;
     font-weight: 500;
-    margin: 0 16px 0 0; /* Espacio a la derecha */
-    flex-shrink: 0; /* Evita que se encoja si hay poco espacio */
-    box-shadow: 0 1px 2px rgba(0,0,0,0.1);
+    margin-right: 12px;
+    flex-shrink: 0;
+    transition: opacity 0.2s ease;
 }
 
-#gemini-organizer-folder-indicator mat-icon {
-    font-size: 20px;
-    width: 20px;
-    height: 20px;
+#gemini-organizer-folder-indicator svg {
+    margin-right: 6px;
+    flex-shrink: 0;
 }
+
 
 /* Soporte para el tema oscuro */
 .dark-theme #gemini-organizer-folder-indicator {

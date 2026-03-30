@@ -149,9 +149,11 @@ export default class EventHandler {
 
         const deleteButton = convItem.querySelector('.delete-conversation-btn');
         if (deleteButton) {
-            const folderName = convItem.closest('.gemini-folder-item').querySelector('.gemini-folder-title').dataset.folderName;
+            const folderName = convItem.dataset.folderName;
             const convId = convItem.dataset.convId;
-            deleteButton.addEventListener('click', (event) => this.handleDeleteConversation(event, folderName, convId));
+            if (folderName && convId) {
+                deleteButton.addEventListener('click', (event) => this.handleDeleteConversation(event, folderName, convId));
+            }
         }
     }
 

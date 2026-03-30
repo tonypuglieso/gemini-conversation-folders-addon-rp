@@ -31,8 +31,13 @@ if (window.geminiOrganizerAppInstance) {
         this.dragAndDropHandler
       );
 
+      this.folderManager.setGeminiAdapter(this.ui.geminiAdapter);
+      this.folderManager.setGeminiAdapter(this.ui.geminiAdapter);
       this.folderManager.setEventHandler(this.eventHandler);
       this.folderManager.setDragAndDropHandler(this.dragAndDropHandler);
+      this.ui.rightPanelComponent.setDragAndDropHandler(this.dragAndDropHandler);
+
+
 
       this.observer = new MutationObserver(this.handleMutations.bind(this));
 
@@ -58,6 +63,9 @@ if (window.geminiOrganizerAppInstance) {
       // 1. Configura el área de almacenamiento (sync o local)
       await this.setupStorage();
 
+      // 2. Load User Settings (Density, Dimensions)
+      await this.ui.rightPanelComponent.loadSettings();
+
       // Check onboarding
       const hasSeenOnboarding = await this.storage.getHasSeenOnboarding();
       if (!hasSeenOnboarding) {
@@ -80,9 +88,11 @@ if (window.geminiOrganizerAppInstance) {
       window.requestIdleCallback(async () => {
         // 3. Inyecta la UI (Sidebar, Botón)
         await this.ui.addToggleButton(this.eventHandler, this.folderManager);
+        await this.ui.addRightPanelTab();
 
         // 4. Carga y muestra las carpetas (ahora que la UI existe)
         await this.folderManager.loadAndDisplayFolders();
+        await this.ui.renderRightPanel(this.folderManager.folders, this.folderManager.allUniqueConversations);
 
         this.dragAndDropHandler.setupDraggableConversations();
 
@@ -148,7 +158,9 @@ if (window.geminiOrganizerAppInstance) {
         ) {
           // Si no está, Gemini ha refrescado la UI. Lo re-inyectamos todo.
           await this.ui.addToggleButton(this.eventHandler, this.folderManager);
+          await this.ui.addRightPanelTab();
           await this.folderManager.loadAndDisplayFolders(); // Recarga las carpetas
+          await this.ui.renderRightPanel(this.folderManager.folders, this.folderManager.allUniqueConversations);
           this.updateSidebarSyncStatus();
         }
 
@@ -178,6 +190,9 @@ if (window.geminiOrganizerAppInstance) {
      */
     async updateFolderIndicator() {
       try {
+        // En primer lugar, verificar si hay un chat pendiente de auto-asignación
+        await this.folderManager.checkAndAssignPendingChat();
+        
         const currentConvId = getActiveConversationId();
         const folderName = await this.folderManager.findFolderForConversation(
           currentConvId
@@ -208,7 +223,8 @@ if (window.geminiOrganizerAppInstance) {
         console.log(
           "El almacenamiento local ha cambiado. Recargando las carpetas."
         );
-        this.folderManager.loadAndDisplayFolders();
+        await this.folderManager.loadAndDisplayFolders();
+        this.ui.renderRightPanel(this.folderManager.folders, this.folderManager.allUniqueConversations);
       }
     }
 

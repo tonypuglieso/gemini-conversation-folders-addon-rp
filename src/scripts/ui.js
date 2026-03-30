@@ -2,6 +2,7 @@ import Sidebar from './components/Sidebar.js';
 import FolderList from './components/FolderList.js';
 import FolderIndicator from './components/FolderIndicator.js';
 import GeminiAdapter from './services/GeminiAdapter.js';
+import RightPanel from './components/RightPanel.js';
 
 export default class UI {
     constructor() {
@@ -10,6 +11,7 @@ export default class UI {
         this.folderIndicatorComponent = new FolderIndicator();
         this.conversationListComponent = this.folderListComponent.conversationList; // Utility access
         this.geminiAdapter = new GeminiAdapter();
+        this.rightPanelComponent = new RightPanel();
 
         this.toggleButton = null;
     }
@@ -137,5 +139,15 @@ export default class UI {
             
             eventHandler.addEventListeners();
         }
+    }
+
+    async addRightPanelTab() {
+        if (!this.rightPanelComponent.element) {
+            this.rightPanelComponent.mount(document.body);
+        }
+    }
+
+    async renderRightPanel(folders, allConversations) {
+        return this.rightPanelComponent.updateData(folders, allConversations);
     }
 }

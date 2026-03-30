@@ -67,19 +67,23 @@ export default class DragAndDrop {
     handleDragOver(event) {
         event.preventDefault();
         event.dataTransfer.dropEffect = 'move';
-        if (event.currentTarget && event.currentTarget.classList.contains('title-container')) {
-            event.currentTarget.classList.add('drag-over');
+        const target = event.currentTarget;
+        if (target && (target.classList.contains('title-container') || target.classList.contains('folder-card'))) {
+            target.classList.add('drag-over');
         }
     }
 
+
     handleDragLeave(event) {
-        if (event.currentTarget && event.currentTarget.classList.contains('title-container')) {
-            event.currentTarget.classList.remove('drag-over');
+        const target = event.currentTarget;
+        if (target && (target.classList.contains('title-container') || target.classList.contains('folder-card'))) {
+            target.classList.remove('drag-over');
         }
-        event.currentTarget.querySelectorAll('.drag-over-top, .drag-over-bottom').forEach(el => {
+        target.querySelectorAll('.drag-over-top, .drag-over-bottom').forEach(el => {
             el.classList.remove('drag-over-top', 'drag-over-bottom');
         });
     }
+
 
     async handleDrop(event) {
         event.preventDefault();

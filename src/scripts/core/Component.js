@@ -7,6 +7,8 @@ export default class Component {
         this.props = props;
         this.state = {};
         this.element = null;
+        this.useShadow = props.useShadow || false;
+        this.shadowRoot = null;
     }
 
     /**
@@ -33,11 +35,35 @@ export default class Component {
      */
     create() {
         const html = this.render();
-        const tempDiv = document.createElement('div');
-        tempDiv.innerHTML = html.trim();
-        this.element = tempDiv.firstElementChild;
+        const styles = this.getStyles();
+
+        if (this.useShadow) {
+            if (!this.element) {
+                this.element = document.createElement('div');
+                this.element.id = this.props.id || `gemini-component-${Math.random().toString(36).substr(2, 9)}`;
+                this.shadowRoot = this.element.attachShadow({ mode: 'open' });
+            }
+
+            this.shadowRoot.innerHTML = `
+                <style>${styles}</style>
+                ${html.trim()}
+            `;
+        } else {
+            const tempDiv = document.createElement('div');
+            tempDiv.innerHTML = html.trim();
+            this.element = tempDiv.firstElementChild;
+        }
+
         this.afterRender();
         return this.element;
+    }
+
+    /**
+     * Optional method to return CSS strings for the component (Shadow DOM only).
+     * @returns {string} CSS styles
+     */
+    getStyles() {
+        return '';
     }
 
     /**
@@ -60,6 +86,14 @@ export default class Component {
         }
 
         const oldElement = this.element;
+
+        // Si usa Shadow DOM, create() ya actualizó el innerHTML del shadowRoot internamente.
+        // No necesitamos (ni podemos) reemplazar el nodo raíz.
+        if (this.useShadow) {
+            this.create();
+            return;
+        }
+
         const newElement = this.create();
 
         oldElement.parentNode.replaceChild(newElement, oldElement);
