@@ -56,11 +56,12 @@ export default class FolderList extends Component {
 
         const folderNames = Object.keys(folders);
 
-        folderNames.forEach((folderName, folderIndex) => {
+        for (let folderIndex = 0; folderIndex < folderNames.length; folderIndex++) {
+            const folderName = folderNames[folderIndex];
             const folder = folders[folderName];
-            this.createFolderElement(folderName, folder, openFolderStates, eventHandler, dragAndDropHandler, folderIndex)
-                .then(folderEl => listContainer.appendChild(folderEl));
-        });
+            const folderEl = await this.createFolderElement(folderName, folder, openFolderStates, eventHandler, dragAndDropHandler, folderIndex);
+            listContainer.appendChild(folderEl);
+        }
     }
 
     async createFolderElement(folderName, folder, openFolderStates, eventHandler, dragAndDropHandler, folderIndex) {
@@ -83,7 +84,9 @@ export default class FolderList extends Component {
 
         const [folderTitle, editButton, deleteButton, expandIcon] = folderHeader.children;
 
-        eventHandler.addFolderInteractionListeners(folderHeader, conversationsWrapper, expandIcon, editButton, deleteButton, folderName, folderTitle);
+        if (eventHandler && typeof eventHandler.addFolderInteractionListeners === 'function') {
+            eventHandler.addFolderInteractionListeners(folderHeader, conversationsWrapper, expandIcon, editButton, deleteButton, folderName, folderTitle);
+        }
 
         if (!openFolderStates[folderName]) {
             conversationsWrapper.classList.add('hidden');

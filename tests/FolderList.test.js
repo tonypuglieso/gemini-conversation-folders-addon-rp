@@ -47,6 +47,21 @@ describe('FolderList', () => {
         expect(container.textContent).toContain('Personal');
     });
 
+    test('renderFolders works without eventHandler or dragAndDropHandler', async () => {
+        document.body.innerHTML = '<ul id="folders-list-ul"></ul>';
+        const mockFolders = {
+            'One': [],
+            'Two': []
+        };
+
+        await folderList.renderFolders(mockFolders, {}, null, null);
+
+        const container = document.getElementById('folders-list-ul');
+        expect(container.children.length).toBe(2);
+        expect(container.textContent).toContain('One');
+        expect(container.textContent).toContain('Two');
+    });
+
     test('filter hides non-matching items', async () => {
         document.body.innerHTML = '<ul id="folders-list-ul"></ul>';
         const mockFolders = {
