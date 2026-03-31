@@ -102,9 +102,6 @@ export default class RightPanel extends Component {
                                     <button class="new-chat-btn" id="right-add-folder-btn" title="Nueva Carpeta">
                                         ${this.svg.folder} Nueva carpeta
                                     </button>
-                                    <button class="new-chat-btn primary-btn" id="right-new-chat-btn" title="Nueva Conversación" style="margin-left: 8px; background: var(--rp-accent); color: white;">
-                                        ${this.svg.plus} Nuevo Chat
-                                    </button>
                                 </div>
                                 <div class="folders-grid" id="right-folders-grid"></div>
                             </div>
@@ -151,16 +148,6 @@ export default class RightPanel extends Component {
 
     afterRender() {
         if (!this.element) return;
-        
-        // Handle Sidebar Sync/Onboarding
-        const newChatBtn = this.element.querySelector('#right-new-chat-btn');
-        if (newChatBtn) {
-            newChatBtn.onclick = () => {
-                if (window.geminiOrganizerAppInstance && window.geminiOrganizerAppInstance.geminiAdapter) {
-                    window.geminiOrganizerAppInstance.geminiAdapter.createNewChatNative();
-                }
-            };
-        }
 
         const backBtn = this.element.querySelector('#right-back-btn');
         if (backBtn) {
@@ -365,18 +352,16 @@ export default class RightPanel extends Component {
                 if (this.currentFolderView === 'Sin Organizar') listTitle.style.color = '#fbbc04';
             }
 
-            // Show/Hide New Chat in Folder button
+            // Mostrar el botón contextual solo cuando estamos dentro de una carpeta real.
             const newChatBtn = this.element.querySelector('#right-new-chat-folder-btn');
             if (newChatBtn) {
-                newChatBtn.style.display = (this.currentFolderView && this.currentFolderView !== 'Sin Organizar') ? 'flex' : 'none';
-                newChatBtn.onclick = () => {
-                    if (window.geminiOrganizerAppInstance) {
-                        window.geminiOrganizerAppInstance.folderManager.setPendingFolderForNewChat(this.currentFolderView);
-                    }
-                };
+                const shouldShowNewChat = !!(this.currentFolderView && this.currentFolderView !== 'Sin Organizar');
+                newChatBtn.style.display = shouldShowNewChat ? 'flex' : 'none';
+                newChatBtn.onclick = shouldShowNewChat && window.geminiOrganizerAppInstance
+                    ? () => window.geminiOrganizerAppInstance.folderManager.setPendingFolderForNewChat(this.currentFolderView)
+                    : null;
             }
 
-            
             if (displayConvs.length === 0) {
                 this.setSafeHTML(list, `<li class="empty-msg">${this.searchTerm ? 'No se encontraron resultados.' : 'Sin chats guardados.'}</li>`);
             } else {
@@ -950,7 +935,7 @@ export default class RightPanel extends Component {
         const ids = Array.from(this.selectedConvIds);
         if (ids.length === 0) return;
 
-        this.showConfirmPanel(`¿Eliminar ${ids.length} chats del organizador?`, async () => {
+        await this.showConfirmPanel(`¿Eliminar ${ids.length} chats del organizador?`, async () => {
             const fm = window.geminiOrganizerAppInstance.folderManager;
 
             if (this.currentFolderView) {
@@ -977,7 +962,7 @@ export default class RightPanel extends Component {
         const ids = Array.from(this.selectedConvIds);
         if (ids.length === 0) return;
 
-        this.showConfirmPanel(`¿Quitar ${ids.length} chats de sus carpetas actuales?`, async () => {
+        await this.showConfirmPanel(`¿Quitar ${ids.length} chats de sus carpetas actuales?`, async () => {
             const fm = window.geminiOrganizerAppInstance.folderManager;
             const allFolders = await window.geminiOrganizerAppInstance.storage.getFolders();
 
@@ -995,25 +980,34 @@ export default class RightPanel extends Component {
     }
 
     showConfirmPanel(message, onConfirm) {
-        const panel = document.createElement('div');
-        panel.className = 'premium-edit-panel confirm-panel';
-        this.setSafeHTML(panel, `
-            <div class="edit-panel-body">
-                <p class="confirm-message">${message}</p>
-                <div class="edit-actions">
-                    <button class="cancel-btn">Cancelar</button>
-                    <button class="confirm-btn danger">Confirmar</button>
+        return new Promise((resolve) => {
+            const panel = document.createElement('div');
+            panel.className = 'premium-edit-panel confirm-panel';
+            this.setSafeHTML(panel, `
+                <div class="edit-panel-body">
+                    <p class="confirm-message">${message}</p>
+                    <div class="edit-actions">
+                        <button class="cancel-btn">Cancelar</button>
+                        <button class="confirm-btn danger">Confirmar</button>
+                    </div>
                 </div>
-            </div>
-        `);
-        document.body.appendChild(panel);
-        this.centerPanel(panel);
-        
-        panel.querySelector('.cancel-btn').onclick = () => panel.remove();
-        panel.querySelector('.confirm-btn').onclick = () => {
-            onConfirm();
-            panel.remove();
-        };
+            `);
+            document.body.appendChild(panel);
+            this.centerPanel(panel);
+            
+            panel.querySelector('.cancel-btn').onclick = () => {
+                panel.remove();
+                resolve(false);
+            };
+            panel.querySelector('.confirm-btn').onclick = async () => {
+                try {
+                    await onConfirm();
+                    resolve(true);
+                } finally {
+                    panel.remove();
+                }
+            };
+        });
     }
 
     async loadSettings() {
@@ -1106,9 +1100,8 @@ export default class RightPanel extends Component {
                 ${this.svg.chevronRight}
             </div>
              <div class="settings-title-label" style="margin-top: 8px;">APARIENCIA</div>
-            <div class="settings-option disabled">
-                <span class="settings-label">Modo Compacto (Activo)</span>
-                <div class="settings-toggle active"></div>
+            <div class="settings-option">
+                <span class="settings-label">Modo Compacto (forzado, sin opción de cambio)</span>
             </div>
         `);
 
