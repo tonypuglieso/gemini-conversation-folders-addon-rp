@@ -366,6 +366,14 @@ async findFolderForConversation(convId) {
                 if (cleanTag && !conv.tags.includes(cleanTag)) {
                     conv.tags.push(cleanTag);
                     await this.storage.saveFolders(folders);
+
+                    // Actualizar título nativo con tags añadidos
+                    const tagsSuffix = conv.tags.length > 0 ? ` [${conv.tags.join(', ')}]` : '';
+                    const targetTitle = `${conv.title || ''}${tagsSuffix}`.trim();
+                    if (this.geminiAdapter) {
+                        await this.geminiAdapter.renameConversationNative(convId, targetTitle);
+                    }
+
                     return true;
                 }
             }
@@ -380,6 +388,13 @@ async findFolderForConversation(convId) {
             if (conv && conv.tags) {
                 conv.tags = conv.tags.filter(t => t !== tag);
                 await this.storage.saveFolders(folders);
+
+                const tagsSuffix = conv.tags.length > 0 ? ` [${conv.tags.join(', ')}]` : '';
+                const targetTitle = `${conv.title || ''}${tagsSuffix}`.trim();
+                if (this.geminiAdapter) {
+                    await this.geminiAdapter.renameConversationNative(convId, targetTitle);
+                }
+
                 return true;
             }
         }
@@ -475,19 +490,35 @@ async findFolderForConversation(convId) {
         // 1. Identify conversations to move
         let conversationsToMove = [];
         
+        const knownConversationMap = new Map((this.allUniqueConversations || []).map(c => [c.id, c]));
+
         if (sourceFolderName === 'Recientes' || sourceFolderName === 'Sin Organizar') {
-            // Scrape or find in visible list
-            const visible = this.geminiAdapter.getVisibleChats();
+            const visible = this.geminiAdapter ? this.geminiAdapter.getVisibleChats() : [];
             conversationsToMove = visible.filter(c => convIds.includes(c.id)).map(c => ({
                 id: c.id,
-                title: c.title,
+                title: c.title || 'Sin título',
                 url: c.url,
-                timestamp: new Date().toLocaleString()
+                timestamp: new Date().toLocaleString(),
+                tags: c.tags || []
             }));
         } else if (folders[sourceFolderName]) {
             conversationsToMove = folders[sourceFolderName].filter(c => convIds.includes(c.id));
             // Remove from source
             folders[sourceFolderName] = folders[sourceFolderName].filter(c => !convIds.includes(c.id));
+        } else {
+            // Fallback: use known conversations cache or visible chats to keep titles
+            const visible = this.geminiAdapter ? this.geminiAdapter.getVisibleChats() : [];
+            conversationsToMove = convIds.map(id => {
+                const known = knownConversationMap.get(id);
+                const vis = visible.find(c => c.id === id);
+                return {
+                    id,
+                    title: (known && known.title) || (vis && vis.title) || 'Sin título',
+                    url: (known && known.url) || (vis && vis.url) || window.location.href,
+                    timestamp: new Date().toLocaleString(),
+                    tags: (known && known.tags) || []
+                };
+            });
         }
 
         // 2. Add to target (avoid duplicates)

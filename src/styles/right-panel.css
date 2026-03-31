@@ -476,9 +476,20 @@
 /* Grilla de Carpetas - Pill Shape */
 #gemini-organizer-right-panel .folders-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); /* Better sizing */
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
     gap: 12px;
     padding: 4px;
+    min-width: 280px;
+}
+
+@media (min-width: 650px) {
+    #gemini-organizer-right-panel .folders-grid {
+        grid-template-columns: repeat(2, minmax(150px, 1fr));
+    }
+}
+
+#gemini-organizer-right-panel.hidden {
+    pointer-events: none;
 }
 
 /* Tag Cloud Styles */

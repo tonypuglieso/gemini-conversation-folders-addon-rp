@@ -365,8 +365,9 @@ export default class RightPanel extends Component {
             if (displayConvs.length === 0) {
                 this.setSafeHTML(list, `<li class="empty-msg">${this.searchTerm ? 'No se encontraron resultados.' : 'Sin chats guardados.'}</li>`);
             } else {
+                const currentFolderName = this.currentFolderView || 'Recientes';
                 displayConvs.forEach(conv => {
-                    list.appendChild(this.renderConversationItem(conv));
+                    list.appendChild(this.renderConversationItem(conv, currentFolderName));
                 });
             }
         }
@@ -473,20 +474,58 @@ export default class RightPanel extends Component {
         div.ondrop = async (e) => {
             div.classList.remove('drag-over');
             e.preventDefault();
-            const chatId = e.dataTransfer.getData('application/x-gemini-chat');
-            const bulkIds = e.dataTransfer.getData('application/x-gemini-chats-bulk');
-            
-            if (window.geminiOrganizerAppInstance) {
-                const fm = window.geminiOrganizerAppInstance.folderManager;
+
+            if (!window.geminiOrganizerAppInstance) return;
+            const fm = window.geminiOrganizerAppInstance.folderManager;
+
+            let ids = [];
+            let sourceFolder = null;
+            let conversations = [];
+
+            const jsonData = e.dataTransfer.getData('application/json');
+            if (jsonData) {
+                try {
+                    const payload = JSON.parse(jsonData);
+                    if (payload) {
+                        ids = Array.isArray(payload.ids) ? payload.ids : payload.id ? [payload.id] : [];
+                        sourceFolder = payload.folder_from || null;
+                        conversations = Array.isArray(payload.conversations) ? payload.conversations : [];
+                    }
+                } catch (err) {
+                    console.warn('RightPanel: no se pudo parsear payload JSON de drag and drop', err);
+                }
+            }
+
+            // Legacy fallback
+            if (ids.length === 0) {
+                const chatId = e.dataTransfer.getData('application/x-gemini-chat');
+                const bulkIds = e.dataTransfer.getData('application/x-gemini-chats-bulk');
                 if (bulkIds) {
-                    const ids = bulkIds.split(',');
-                    for (const id of ids) await fm.addConversationToFolder(folderName, { id });
-                    showToast(`${ids.length} chats movidos a ${folderName}`, 'success');
+                    ids = bulkIds.split(',').map(s => s.trim()).filter(Boolean);
                 } else if (chatId) {
-                    await fm.addConversationToFolder(folderName, { id: chatId });
-                    showToast(`Chat movido a ${folderName}`, 'success');
+                    ids = [chatId];
+                }
+            }
+
+            if (ids.length > 0) {
+                // Enviar la lista de ids a carpeta de destino, con source
+                await fm.moveConversationsToFolder(ids, sourceFolder, folderName);
+                this.updateData();
+                showToast(`${ids.length} chat${ids.length > 1 ? 's' : ''} movido${ids.length > 1 ? 's' : ''} a ${folderName}`, 'success');
+                return;
+            }
+
+            // Fallback específico: agregar manualmente si no hay move path
+            if (ids.length === 0 && conversations.length > 0) {
+                for (const conv of conversations) {
+                    await fm.addConversationToFolder(folderName, {
+                        id: conv.id,
+                        title: conv.title,
+                        url: conv.url
+                    });
                 }
                 this.updateData();
+                showToast(`${conversations.length} chat${conversations.length > 1 ? 's' : ''} movido${conversations.length > 1 ? 's' : ''} a ${folderName}`, 'success');
             }
         };
 
@@ -688,12 +727,23 @@ export default class RightPanel extends Component {
         // Point 13: Drag Chat
         li.draggable = true;
         li.ondragstart = (e) => {
-            if (this.isBulkMode && this.selectedConvIds.has(conv.id)) {
-                // Dragging multiple
-                e.dataTransfer.setData('application/x-gemini-chats-bulk', Array.from(this.selectedConvIds).join(','));
-            } else {
-                e.dataTransfer.setData('application/x-gemini-chat', conv.id);
-            }
+            const selectedIds = this.isBulkMode && this.selectedConvIds.has(conv.id) ? Array.from(this.selectedConvIds) : [conv.id];
+            const conversationsMeta = selectedIds.map(id => {
+                if (id === conv.id) {
+                    return { id: conv.id, title: conv.title || 'Sin título', url: conv.url || '' };
+                }
+                // Fallback: use last-data lookup for extra selected items
+                const found = (this.lastData.conversations || []).find(c => c.id === id) ||
+                              (Object.values(this.lastData.folders || {}).flat().find(c => c.id === id));
+                return { id, title: found?.title || 'Sin título', url: found?.url || '' };
+            });
+            const payload = {
+                type: this.isBulkMode && this.selectedConvIds.has(conv.id) ? 'bulk' : 'single',
+                ids: selectedIds,
+                folder_from: folder || null,
+                conversations: conversationsMeta
+            };
+            e.dataTransfer.setData('application/json', JSON.stringify(payload));
             li.classList.add('is-dragging');
         };
         li.ondragend = () => li.classList.remove('is-dragging');
@@ -748,10 +798,7 @@ export default class RightPanel extends Component {
         const addTagBtn = li.querySelector('.add-tag-btn');
         if (addTagBtn) addTagBtn.onclick = (e) => {
             e.stopPropagation();
-            const tag = prompt('Nueva etiqueta (ej: trabajo, ideas):');
-            if (tag && window.geminiOrganizerAppInstance) {
-                window.geminiOrganizerAppInstance.folderManager.addTagToConversation(folder, conv.id, tag);
-            }
+            this.showEditChatPanel(conv, folder, addTagBtn);
         };
 
         // Remove tag logic (click on tag)

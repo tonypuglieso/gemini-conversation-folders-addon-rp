@@ -116,4 +116,53 @@ describe('FolderManager', () => {
         
         window.location = originalLocation;
     });
+
+    test('addTagToConversation updates native title with tag suffix', async () => {
+        const mockGeminiAdapter = {
+            renameConversationNative: jest.fn().mockResolvedValue(true)
+        };
+        folderManager.setGeminiAdapter(mockGeminiAdapter);
+        mockStorage.getFolders.mockResolvedValue({
+            'Target Folder': [{ id: '123', title: 'Test Chat', tags: [] }]
+        });
+
+        const result = await folderManager.addTagToConversation('Target Folder', '123', 'urgente');
+
+        expect(result).toBe(true);
+        expect(mockStorage.saveFolders).toHaveBeenCalled();
+        expect(mockGeminiAdapter.renameConversationNative).toHaveBeenCalledWith('123', 'Test Chat [urgente]');
+    });
+
+    test('removeTagFromConversation updates native title removing tag suffix', async () => {
+        const mockGeminiAdapter = {
+            renameConversationNative: jest.fn().mockResolvedValue(true)
+        };
+        folderManager.setGeminiAdapter(mockGeminiAdapter);
+        mockStorage.getFolders.mockResolvedValue({
+            'Target Folder': [{ id: '123', title: 'Test Chat', tags: ['urgente', 'importante'] }]
+        });
+
+        const result = await folderManager.removeTagFromConversation('Target Folder', '123', 'urgente');
+
+        expect(result).toBe(true);
+        expect(mockStorage.saveFolders).toHaveBeenCalled();
+        expect(mockGeminiAdapter.renameConversationNative).toHaveBeenCalledWith('123', 'Test Chat [importante]');
+    });
+
+    test('moveConversationsToFolder with unknown source uses cached title instead of default Sin título', async () => {
+        folderManager.allUniqueConversations = [{ id: 'id1', title: 'Real Title', url: 'https://example.com' }];
+        folderManager.setGeminiAdapter({ getVisibleChats: jest.fn().mockReturnValue([]) });
+
+        mockStorage.getFolders.mockResolvedValue({
+            'Target': [],
+            'Other': []
+        });
+
+        await folderManager.moveConversationsToFolder(['id1'], null, 'Target');
+
+        expect(mockStorage.saveFolders).toHaveBeenCalledWith({
+            'Target': [expect.objectContaining({ id: 'id1', title: 'Real Title' })],
+            'Other': []
+        });
+    });
 });

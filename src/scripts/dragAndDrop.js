@@ -91,27 +91,40 @@ export default class DragAndDrop {
             event.currentTarget.classList.remove('drag-over');
         }
 
-        const droppedData = event.dataTransfer.getData('application/json');
-        if (!droppedData) return;
+        let droppedData = event.dataTransfer.getData('application/json');
+        let ids = [];
+        let sourceFolderName = null;
 
-        const conversation = JSON.parse(droppedData);
+        if (droppedData) {
+            try {
+                const payload = JSON.parse(droppedData);
+                if (payload) {
+                    if (Array.isArray(payload.ids)) {
+                        ids = payload.ids;
+                        sourceFolderName = payload.folder_from || null;
+                    } else if (payload.id) {
+                        ids = [payload.id];
+                        sourceFolderName = payload.folder_from || null;
+                    }
+                }
+            } catch (e) {
+                console.warn('DragAndDrop: JSON parse failed for drop payload', e);
+            }
+        }
+
+        if (ids.length === 0) {
+            const singleId = event.dataTransfer.getData('application/x-gemini-chat');
+            if (singleId) ids = [singleId];
+
+            const bulkIds = event.dataTransfer.getData('application/x-gemini-chats-bulk');
+            if (bulkIds) ids = bulkIds.split(',').map(t => t.trim()).filter(t => t);
+        }
+
         const targetFolderName = event.currentTarget.dataset.folderName;
-        const sourceFolderName = conversation.folder_from;
+        if (!targetFolderName || ids.length === 0) return;
 
-        if (!targetFolderName) return;
-
-        const storedFolders = await this.storage.getFolders();
-
-        if (sourceFolderName && sourceFolderName !== targetFolderName) {
-            storedFolders[sourceFolderName] = storedFolders[sourceFolderName].filter(c => c.id !== conversation.id);
-        }
-
-        if (!storedFolders[targetFolderName].some(c => c.id === conversation.id)) {
-            storedFolders[targetFolderName].push({ id: conversation.id, title: conversation.title, url: conversation.url, timestamp: new Date().toLocaleString() });
-        }
-
-        await this.storage.saveFolders(storedFolders);
-        showToast(`Conversación movida a "${targetFolderName}"`, 'success');
+        await this.folderManager.moveConversationsToFolder(ids, sourceFolderName, targetFolderName);
+        showToast(`Conversación${ids.length > 1 ? 'es' : ''} movida${ids.length > 1 ? 's' : ''} a "${targetFolderName}"`, 'success');
     }
 
     handleConversationListDragOver(event) {
