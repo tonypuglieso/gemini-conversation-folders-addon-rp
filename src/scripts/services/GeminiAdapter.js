@@ -30,7 +30,7 @@ export default class GeminiAdapter {
         if (newChat) return { element: newChat, position: 'after' };
 
         const historyList = document.querySelector(this.selectors.chatHistoryList);
-        if (historyList) return { element: historyList, position: 'before' };
+        if (historyList) return { element: historyList.parentNode || historyList, position: 'before' };
 
         // Ultimate fallback: first nav
         const nav = document.querySelector('nav');

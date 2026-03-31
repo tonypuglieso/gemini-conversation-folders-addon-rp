@@ -20,10 +20,10 @@
 }
 
 #gemini-organizer-sidebar:not(.hidden) {
-    opacity: 1;
-    transform: translateY(0);
-    visibility: visible;
-    height: auto; 
+    opacity: 1 !important;
+    transform: translateY(0) !important;
+    visibility: visible !important;
+    height: auto !important;
     padding-top: 15px;
     padding-bottom: 15px; 
 }

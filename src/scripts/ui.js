@@ -70,10 +70,7 @@ export default class UI {
     }
 
     async addToggleButton(eventHandler, folderManager) {
-        const insertionPoint = this.geminiAdapter.getSidebarInsertionPoint() || {
-            element: document.querySelector('nav') || document.body.firstChild,
-            position: 'after'
-        };
+        const insertionPoint = this.geminiAdapter.getSidebarInsertionPoint();
         
         if (insertionPoint) {
             const { element: anchorElement, position } = insertionPoint;

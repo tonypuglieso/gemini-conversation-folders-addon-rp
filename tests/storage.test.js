@@ -2,6 +2,7 @@ import Storage from '../src/scripts/services/Storage.js';
 
 // Mock chrome.storage
 global.chrome = {
+    runtime: { id: 'test-id' },
     storage: {
         local: {
             get: jest.fn(),

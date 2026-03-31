@@ -15,7 +15,7 @@ export default class FolderManager {
     async loadAndDisplayFolders() {
         const openFolderStates = this.ui.getOpenFolderStates();
         const folders = await this.storage.getFolders();
-        const folderOrder = await this.storage.getFolderOrder();
+        const folderOrder = (await this.storage.getFolderOrder()) || [];
         
         // Re-order folders based on the manual order list
         const orderedFolders = {};
@@ -74,7 +74,7 @@ export default class FolderManager {
     }
 
     async reorderFolders(fromIndex, toIndex) {
-        const folderOrder = await this.storage.getFolderOrder();
+        const folderOrder = (await this.storage.getFolderOrder()) || [];
         const [movedItem] = folderOrder.splice(fromIndex, 1);
         folderOrder.splice(toIndex, 0, movedItem);
         await this.storage.saveFolderOrder(folderOrder);
@@ -96,7 +96,7 @@ export default class FolderManager {
         await this.storage.saveFolders(storedFolders);
         
         // Add to order
-        const folderOrder = await this.storage.getFolderOrder();
+        const folderOrder = (await this.storage.getFolderOrder()) || [];
         folderOrder.push(folderName);
         await this.storage.saveFolderOrder(folderOrder);
 
@@ -128,7 +128,7 @@ export default class FolderManager {
         await this.storage.saveFolders(storedFolders);
 
         // Update name in order list
-        const folderOrder = await this.storage.getFolderOrder();
+        const folderOrder = (await this.storage.getFolderOrder()) || [];
         const idx = folderOrder.indexOf(originalFolderName);
         if (idx !== -1) {
             folderOrder[idx] = newFolderName;
@@ -164,7 +164,7 @@ export default class FolderManager {
             await this.storage.saveFolders(storedFolders);
             
             // Remove from order list
-            const folderOrder = await this.storage.getFolderOrder();
+            const folderOrder = (await this.storage.getFolderOrder()) || [];
             const newOrder = folderOrder.filter(n => n !== folderName);
             await this.storage.saveFolderOrder(newOrder);
 

@@ -4,6 +4,8 @@ import FolderManager from '../src/scripts/services/FolderManager.js';
 const mockStorage = {
     getFolders: jest.fn(),
     saveFolders: jest.fn(),
+    getFolderOrder: jest.fn(),
+    saveFolderOrder: jest.fn(),
 };
 
 const mockUI = {

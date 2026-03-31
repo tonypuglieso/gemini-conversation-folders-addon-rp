@@ -156,8 +156,11 @@ export default class FolderList extends Component {
             let folderMatches = folderName.includes(searchTerm);
             let anyConversationMatches = false;
 
+            // Start with hidden state for folders to ensure no leakage
+            folderItem.style.display = 'none';
+
             conversationItems.forEach(convItem => {
-                const convTitle = convItem.dataset.convTitle.toLowerCase(); // Use dataset since we set it
+                const convTitle = (convItem.dataset.convTitle || '').toLowerCase();
                 if (convTitle.includes(searchTerm)) {
                     convItem.style.display = '';
                     anyConversationMatches = true;
