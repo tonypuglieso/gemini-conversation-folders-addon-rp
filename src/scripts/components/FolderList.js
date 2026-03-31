@@ -54,20 +54,20 @@ export default class FolderList extends Component {
             return;
         }
 
-        const sortedFolderNames = Object.keys(folders).sort();
+        const folderNames = Object.keys(folders);
 
-        for (const folderName of sortedFolderNames) {
+        folderNames.forEach((folderName, folderIndex) => {
             const folder = folders[folderName];
-            const folderEl = await this.createFolderElement(folderName, folder, openFolderStates, eventHandler, dragAndDropHandler);
-            listContainer.appendChild(folderEl);
-        }
+            this.createFolderElement(folderName, folder, openFolderStates, eventHandler, dragAndDropHandler, folderIndex)
+                .then(folderEl => listContainer.appendChild(folderEl));
+        });
     }
 
-    async createFolderElement(folderName, folder, openFolderStates, eventHandler, dragAndDropHandler) {
+    async createFolderElement(folderName, folder, openFolderStates, eventHandler, dragAndDropHandler, folderIndex) {
         const folderContainer = document.createElement('li');
         folderContainer.classList.add('gemini-folder-item');
 
-        const folderHeader = this.createFolderHeader(folderName, dragAndDropHandler);
+        const folderHeader = this.createFolderHeader(folderName, folderIndex, dragAndDropHandler);
         
         // Use ConversationList component
         const convListComponent = new ConversationList({
@@ -98,17 +98,73 @@ export default class FolderList extends Component {
         return folderContainer;
     }
 
-    createFolderHeader(folderName, dragAndDropHandler) {
+    createFolderHeader(folderName, folderIndex, dragAndDropHandler) {
         const folderHeader = document.createElement('div');
         folderHeader.classList.add('title-container');
         folderHeader.setAttribute('role', 'button');
         folderHeader.setAttribute('tabindex', '0');
         folderHeader.dataset.folderName = folderName;
-        
-        // We can add listeners immediately if we have the handler
-        folderHeader.addEventListener('dragover', dragAndDropHandler.handleDragOver.bind(dragAndDropHandler));
-        folderHeader.addEventListener('dragleave', dragAndDropHandler.handleDragLeave.bind(dragAndDropHandler));
-        folderHeader.addEventListener('drop', dragAndDropHandler.handleDrop.bind(dragAndDropHandler));
+        folderHeader.dataset.folderIndex = String(folderIndex);
+        folderHeader.draggable = true;
+
+        // Reorder folders by drag-drop between folder headers
+        folderHeader.addEventListener('dragstart', (event) => {
+            event.dataTransfer.effectAllowed = 'move';
+            event.dataTransfer.setData('application/x-folder-order', JSON.stringify({
+                folderName,
+                folderIndex
+            }));
+            folderHeader.classList.add('dragging');
+        });
+
+        folderHeader.addEventListener('dragend', () => {
+            folderHeader.classList.remove('dragging');
+        });
+
+        folderHeader.addEventListener('dragover', (event) => {
+            const types = event.dataTransfer.types;
+            if (types.includes('application/x-folder-order') || types.includes('application/json') || types.includes('application/x-gemini-chat') || types.includes('application/x-gemini-chats-bulk')) {
+                event.preventDefault();
+                event.dataTransfer.dropEffect = 'move';
+                folderHeader.classList.add('drag-over');
+            }
+        });
+
+        folderHeader.addEventListener('dragleave', () => {
+            folderHeader.classList.remove('drag-over');
+        });
+
+        folderHeader.addEventListener('drop', async (event) => {
+            event.preventDefault();
+            folderHeader.classList.remove('drag-over');
+
+            const folderOrderData = event.dataTransfer.getData('application/x-folder-order');
+            if (folderOrderData) {
+                try {
+                    const payload = JSON.parse(folderOrderData);
+                    const sourceIndex = parseInt(payload.folderIndex, 10);
+                    const targetIndex = parseInt(folderHeader.dataset.folderIndex, 10);
+
+                    if (!Number.isNaN(sourceIndex) && !Number.isNaN(targetIndex) && sourceIndex !== targetIndex && window.geminiOrganizerAppInstance) {
+                        await window.geminiOrganizerAppInstance.folderManager.reorderFolders(sourceIndex, targetIndex);
+                        await window.geminiOrganizerAppInstance.folderManager.loadAndDisplayFolders();
+                        await window.geminiOrganizerAppInstance.ui.renderRightPanel(window.geminiOrganizerAppInstance.folderManager.folders, window.geminiOrganizerAppInstance.folderManager.allUniqueConversations);
+                    }
+
+                    return;
+                } catch (e) {
+                    console.warn('FolderList: Error parsing folder reorder payload', e);
+                }
+            }
+
+            // Fallback to normal chat drop handler
+            if (dragAndDropHandler && dragAndDropHandler.handleDrop) {
+                await dragAndDropHandler.handleDrop(event);
+                if (window.geminiOrganizerAppInstance?.ui?.rightPanelComponent) {
+                    window.geminiOrganizerAppInstance.ui.rightPanelComponent.updateData(window.geminiOrganizerAppInstance.folderManager.folders, window.geminiOrganizerAppInstance.folderManager.allUniqueConversations);
+                }
+            }
+        });
 
         this.setSafeHTML(folderHeader, `
             <span class="title gds-label-l gemini-folder-title" data-folder-name="${folderName}">${folderName}</span>

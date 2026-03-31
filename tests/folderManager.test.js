@@ -165,4 +165,18 @@ describe('FolderManager', () => {
             'Other': []
         });
     });
+
+    test('reorderFolders updates folder order in storage', async () => {
+        mockStorage.getFolders.mockResolvedValue({
+            FolderA: [],
+            FolderB: [],
+            FolderC: []
+        });
+        mockStorage.getFolderOrder.mockResolvedValue(['FolderA', 'FolderB', 'FolderC']);
+
+        const newOrder = await folderManager.reorderFolders(0, 2);
+
+        expect(newOrder).toEqual(['FolderB', 'FolderC', 'FolderA']);
+        expect(mockStorage.saveFolderOrder).toHaveBeenCalledWith(['FolderB', 'FolderC', 'FolderA']);
+    });
 });
