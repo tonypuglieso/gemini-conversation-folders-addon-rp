@@ -40,6 +40,17 @@ describe('RightPanel', () => {
         expect(menu.textContent).not.toContain('Modo Compacto (Activo)');
     });
 
+    test('applySettings uses persisted panelWidth and foldersHeight', () => {
+        rightPanel.settings = { panelWidth: 470, foldersHeight: 52 };
+        rightPanel.applySettings();
+
+        const panel = rightPanel.element.querySelector('#gemini-organizer-right-panel');
+        const folderSection = panel.querySelector('#folders-main-container');
+
+        expect(panel.style.width).toBe('470px');
+        expect(folderSection.style.height).toBe('52%');
+    });
+
     test('handleBulkDelete removes from folder(s) only and does not touch Gemini chat state', async () => {
         window.geminiOrganizerAppInstance = {
             folderManager: {

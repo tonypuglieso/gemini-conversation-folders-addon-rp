@@ -265,6 +265,9 @@ export default class RightPanel extends Component {
                 };
             });
         }
+
+        // Ensure persisted settings are applied after the UI is rendered
+        this.applySettings();
     }
 
     /**

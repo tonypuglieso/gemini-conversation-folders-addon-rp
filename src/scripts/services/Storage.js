@@ -60,20 +60,50 @@ export default class  Storage {
     }
 
     async getSettings() {
-        if (!chrome.runtime?.id) return {
+        const defaultSettings = {
             density: 'compact',
             panelWidth: 340,
             foldersHeight: 40
         };
-        const data = await this.area.get('gemini_organizer_settings');
-        return data.gemini_organizer_settings || {
-            density: 'compact',
-            panelWidth: 340,
-            foldersHeight: 40
-        };
+
+        // Prefer extension storage when available
+        if (chrome.runtime?.id) {
+            try {
+                const data = await this.area.get('gemini_organizer_settings');
+                const settings = data.gemini_organizer_settings || defaultSettings;
+                if (typeof localStorage !== 'undefined') {
+                    localStorage.setItem('gemini_organizer_settings', JSON.stringify(settings));
+                }
+                return settings;
+            } catch (e) {
+                console.warn('Storage: Error reading settings from chrome.storage, falling back to localStorage', e);
+            }
+        }
+
+        // Fallback to localStorage if extension storage is unavailable
+        if (typeof localStorage !== 'undefined') {
+            try {
+                const stored = localStorage.getItem('gemini_organizer_settings');
+                if (stored) {
+                    return JSON.parse(stored);
+                }
+            } catch (e) {
+                console.warn('Storage: LocalStorage getSettings parse error', e);
+            }
+        }
+
+        return defaultSettings;
     }
 
     async saveSettings(settings) {
+        if (typeof localStorage !== 'undefined') {
+            try {
+                localStorage.setItem('gemini_organizer_settings', JSON.stringify(settings));
+            } catch (e) {
+                console.warn('Storage: LocalStorage saveSettings failed', e);
+            }
+        }
+
         if (!chrome.runtime?.id) return;
         return this.area.set({ gemini_organizer_settings: settings });
     }
