@@ -261,6 +261,25 @@
     background-color: #f1f3f4;
 }
 
+#gemini-organizer-sidebar .gemini-folder-item .folder-drag-handle {
+    cursor: grab;
+    color: #bdc1c6;
+    font-size: 15px;
+    padding: 0 6px 0 0;
+    user-select: none;
+    flex-shrink: 0;
+    opacity: 0;
+    transition: opacity 0.15s ease;
+}
+
+#gemini-organizer-sidebar .gemini-folder-item .title-container:hover .folder-drag-handle {
+    opacity: 1;
+}
+
+#gemini-organizer-sidebar .gemini-folder-item .title-container.dragging {
+    opacity: 0.4;
+}
+
 #gemini-organizer-sidebar .gemini-folder-item .title-container .title {
     flex-grow: 1;
     margin: 0 8px 0 0; 

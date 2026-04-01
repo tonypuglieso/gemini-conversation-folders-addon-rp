@@ -59,12 +59,12 @@ export default class FolderList extends Component {
         for (let folderIndex = 0; folderIndex < folderNames.length; folderIndex++) {
             const folderName = folderNames[folderIndex];
             const folder = folders[folderName];
-            const folderEl = await this.createFolderElement(folderName, folder, openFolderStates, eventHandler, dragAndDropHandler, folderIndex);
+            const folderEl = this.createFolderElement(folderName, folder, openFolderStates, eventHandler, dragAndDropHandler, folderIndex);
             listContainer.appendChild(folderEl);
         }
     }
 
-    async createFolderElement(folderName, folder, openFolderStates, eventHandler, dragAndDropHandler, folderIndex) {
+    createFolderElement(folderName, folder, openFolderStates, eventHandler, dragAndDropHandler, folderIndex) {
         const folderContainer = document.createElement('li');
         folderContainer.classList.add('gemini-folder-item');
 
@@ -82,7 +82,8 @@ export default class FolderList extends Component {
         folderContainer.appendChild(folderHeader);
         folderContainer.appendChild(conversationsWrapper);
 
-        const [folderTitle, editButton, deleteButton, expandIcon] = folderHeader.children;
+        // children: [drag-handle, title, editBtn, deleteBtn, expandIcon]
+        const [, folderTitle, editButton, deleteButton, expandIcon] = folderHeader.children;
 
         if (eventHandler && typeof eventHandler.addFolderInteractionListeners === 'function') {
             eventHandler.addFolderInteractionListeners(folderHeader, conversationsWrapper, expandIcon, editButton, deleteButton, folderName, folderTitle);
@@ -108,73 +109,86 @@ export default class FolderList extends Component {
         folderHeader.setAttribute('tabindex', '0');
         folderHeader.dataset.folderName = folderName;
         folderHeader.dataset.folderIndex = String(folderIndex);
-        folderHeader.draggable = true;
-
-        // Reorder folders by drag-drop between folder headers
-        folderHeader.addEventListener('dragstart', (event) => {
-            event.dataTransfer.effectAllowed = 'move';
-            event.dataTransfer.setData('application/x-folder-order', JSON.stringify({
-                folderName,
-                folderIndex
-            }));
-            folderHeader.classList.add('dragging');
-        });
-
-        folderHeader.addEventListener('dragend', () => {
-            folderHeader.classList.remove('dragging');
-        });
+        // draggable is NOT set on folderHeader — only the .folder-drag-handle inside is draggable
 
         folderHeader.addEventListener('dragover', (event) => {
             const types = event.dataTransfer.types;
-            if (types.includes('application/x-folder-order') || types.includes('application/json') || types.includes('application/x-gemini-chat') || types.includes('application/x-gemini-chats-bulk')) {
+            if (types.includes('application/x-folder-order') ||
+                types.includes('application/json') ||
+                types.includes('application/x-gemini-chat') ||
+                types.includes('application/x-gemini-chats-bulk')) {
                 event.preventDefault();
                 event.dataTransfer.dropEffect = 'move';
                 folderHeader.classList.add('drag-over');
             }
         });
 
-        folderHeader.addEventListener('dragleave', () => {
-            folderHeader.classList.remove('drag-over');
+        folderHeader.addEventListener('dragleave', (event) => {
+            if (!folderHeader.contains(event.relatedTarget)) {
+                folderHeader.classList.remove('drag-over');
+            }
         });
 
         folderHeader.addEventListener('drop', async (event) => {
             event.preventDefault();
             folderHeader.classList.remove('drag-over');
+            const targetIndex = parseInt(folderHeader.dataset.folderIndex, 10);
 
             const folderOrderData = event.dataTransfer.getData('application/x-folder-order');
             if (folderOrderData) {
                 try {
                     const payload = JSON.parse(folderOrderData);
                     const sourceIndex = parseInt(payload.folderIndex, 10);
-                    const targetIndex = parseInt(folderHeader.dataset.folderIndex, 10);
-
-                    if (!Number.isNaN(sourceIndex) && !Number.isNaN(targetIndex) && sourceIndex !== targetIndex && window.geminiOrganizerAppInstance) {
+                    if (!Number.isNaN(sourceIndex) && !Number.isNaN(targetIndex) &&
+                        sourceIndex !== targetIndex && window.geminiOrganizerAppInstance) {
                         await window.geminiOrganizerAppInstance.folderManager.reorderFolders(sourceIndex, targetIndex);
                         await window.geminiOrganizerAppInstance.folderManager.loadAndDisplayFolders();
-                        await window.geminiOrganizerAppInstance.ui.renderRightPanel(window.geminiOrganizerAppInstance.folderManager.folders, window.geminiOrganizerAppInstance.folderManager.allUniqueConversations);
+                        await window.geminiOrganizerAppInstance.ui.renderRightPanel(
+                            window.geminiOrganizerAppInstance.folderManager.folders,
+                            window.geminiOrganizerAppInstance.folderManager.allUniqueConversations
+                        );
                     }
-
-                    return;
                 } catch (e) {
                     console.warn('FolderList: Error parsing folder reorder payload', e);
                 }
+                return;
             }
 
-            // Fallback to normal chat drop handler
+            // Fallback: delegate chat drops to dragAndDropHandler
             if (dragAndDropHandler && dragAndDropHandler.handleDrop) {
                 await dragAndDropHandler.handleDrop(event);
-                if (window.geminiOrganizerAppInstance?.ui?.rightPanelComponent) {
-                    window.geminiOrganizerAppInstance.ui.rightPanelComponent.updateData(window.geminiOrganizerAppInstance.folderManager.folders, window.geminiOrganizerAppInstance.folderManager.allUniqueConversations);
-                }
+                window.geminiOrganizerAppInstance?.ui?.rightPanelComponent?.updateData(
+                    window.geminiOrganizerAppInstance.folderManager.folders,
+                    window.geminiOrganizerAppInstance.folderManager.allUniqueConversations
+                );
             }
         });
 
         this.setSafeHTML(folderHeader, `
+            <span class="folder-drag-handle" title="Reordenar carpeta">⠿</span>
             <span class="title gds-label-l gemini-folder-title" data-folder-name="${folderName}">${folderName}</span>
             <button class="edit-folder-btn" title="Renombrar carpeta: &quot;${folderName}&quot;" data-folder-name="${folderName}"><mat-icon role="img" class="mat-icon notranslate google-symbols mat-ligature-font mat-icon-no-color" aria-hidden="true" data-mat-icon-type="font" data-mat-icon-name="edit" fonticon="edit"></mat-icon></button>
             <button class="delete-folder-btn" title="Eliminar carpeta: &quot;${folderName}&quot;" data-folder-name="${folderName}"><mat-icon role="img" class="mat-icon notranslate google-symbols mat-ligature-font mat-icon-no-color" aria-hidden="true" data-mat-icon-type="font" data-mat-icon-name="delete" fonticon="delete"></mat-icon></button>
             <mat-icon role="img" class="mat-icon notranslate gds-icon-l google-symbols mat-ligature-font mat-icon-no-color gemini-expand-icon" aria-hidden="true" data-mat-icon-type="font" data-mat-icon-name="expand_more" fonticon="expand_more"></mat-icon>
         `);
+
+        // Attach drag events to the dedicated handle (rendered inside via setSafeHTML)
+        const handle = folderHeader.querySelector('.folder-drag-handle');
+        if (handle) {
+            handle.draggable = true;
+            handle.addEventListener('dragstart', (event) => {
+                event.stopPropagation();
+                event.dataTransfer.effectAllowed = 'move';
+                event.dataTransfer.setData('application/x-folder-order', JSON.stringify({
+                    folderName,
+                    folderIndex
+                }));
+                folderHeader.classList.add('dragging');
+            });
+            handle.addEventListener('dragend', () => {
+                folderHeader.classList.remove('dragging');
+            });
+        }
 
         return folderHeader;
     }

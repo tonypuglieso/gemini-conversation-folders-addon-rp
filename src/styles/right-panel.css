@@ -476,16 +476,11 @@
 /* Grilla de Carpetas - Pill Shape */
 #gemini-organizer-right-panel .folders-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-    gap: 12px;
+    /* Allow narrower cards so more columns fit as panel expands */
+    grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+    gap: 10px;
     padding: 4px;
-    min-width: 280px;
-}
-
-@media (min-width: 650px) {
-    #gemini-organizer-right-panel .folders-grid {
-        grid-template-columns: repeat(2, minmax(150px, 1fr));
-    }
+    min-width: 240px;
 }
 
 #gemini-organizer-right-panel.hidden {
@@ -626,14 +621,14 @@
 
 
 
-#gemini-organizer-right-panel .folder-menu-trigger {
+#gemini-organizer-right-panel .folder-drag-handle {
     position: absolute;
     top: 4px;
-    right: 4px;
-    background: rgba(0, 0, 0, 0.4) !important;
+    left: 4px;
+    background: transparent !important;
     border: none !important;
     color: var(--rp-text-primary);
-    cursor: pointer;
+    cursor: grab;
     padding: 3px;
     border-radius: 50%;
     opacity: 0; /* Hidden by default */
@@ -643,17 +638,46 @@
     display: flex;
     align-items: center;
     justify-content: center;
+    font-size: 14px;
 }
 
-#gemini-organizer-right-panel .folder-card:hover .folder-menu-trigger,
-#gemini-organizer-right-panel .folder-card.selected .folder-menu-trigger {
+#gemini-organizer-right-panel .folder-card:hover .folder-drag-handle,
+#gemini-organizer-right-panel .folder-card.selected .folder-drag-handle {
     opacity: 1;
     transform: scale(1);
+}
+
+#gemini-organizer-right-panel .folder-card.dragging {
+    opacity: 0.5;
+    transform: rotate(5deg);
+}
+
+#gemini-organizer-right-panel .folder-card.drag-over {
+    background: rgba(138, 180, 248, 0.1) !important;
+    border: 2px solid var(--rp-accent) !important;
+    box-shadow: 0 0 8px rgba(138, 180, 248, 0.3);
+    transform: scale(1.02);
 }
 
 #gemini-organizer-right-panel .folder-menu-trigger svg {
     width: 16px;
     height: 16px;
+}
+
+/* Position the edit button to the right, aligned horizontally with the emoji */
+#gemini-organizer-right-panel .folder-menu-trigger {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    background: transparent;
+    border: none;
+    padding: 2px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 28px;
+    z-index: 3;
 }
 
 /* Premium Dropdown Menu (The "panelcito") */

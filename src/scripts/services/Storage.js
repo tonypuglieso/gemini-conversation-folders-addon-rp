@@ -19,14 +19,79 @@ export default class  Storage {
     }
 
     async getFolders() {
-        if (!chrome.runtime?.id) return {};
-        const data = await this.area.get(this.key);
-        return data[this.key] || {};
+        // Try chrome.storage first; if no data present, fallback to any legacy localStorage data.
+        if (!chrome.runtime?.id) {
+            if (typeof localStorage !== 'undefined') {
+                try {
+                    const stored = localStorage.getItem(this.key);
+                    if (stored) {
+                        const parsed = JSON.parse(stored);
+                        if (parsed && typeof parsed === 'object') {
+                            return parsed;
+                        }
+                    }
+                } catch (e) {
+                    console.warn('Storage: localStorage getFolders parse error', e);
+                }
+            }
+            return {};
+        }
+
+        try {
+            const data = await this.area.get(this.key);
+            const folders = data[this.key] || {};
+
+            if (folders && typeof folders === 'object' && Object.keys(folders).length > 0) {
+                if (typeof localStorage !== 'undefined') {
+                    try {
+                        localStorage.setItem(this.key, JSON.stringify(folders));
+                    } catch (e) {
+                        console.warn('Storage: localStorage setFolders failed', e);
+                    }
+                }
+                return folders;
+            }
+
+            // If chrome storage is empty, fall back to localStorage (migration path)
+            if (typeof localStorage !== 'undefined') {
+                try {
+                    const stored = localStorage.getItem(this.key);
+                    if (stored) {
+                        const parsed = JSON.parse(stored);
+                        if (parsed && typeof parsed === 'object') {
+                            // Sync back to chrome.storage to persist
+                            await this.area.set({ [this.key]: parsed });
+                            return parsed;
+                        }
+                    }
+                } catch (e) {
+                    console.warn('Storage: localStorage getFolders parse error', e);
+                }
+            }
+
+            return folders;
+        } catch (e) {
+            console.warn('Storage: chrome.storage getFolders failed', e);
+            return {};
+        }
     }
 
     async saveFolders(folders) {
+        if (typeof localStorage !== 'undefined') {
+            try {
+                localStorage.setItem(this.key, JSON.stringify(folders));
+            } catch (e) {
+                console.warn('Storage: localStorage saveFolders failed', e);
+            }
+        }
+
         if (!chrome.runtime?.id) return;
-        return this.area.set({ [this.key]: folders });
+
+        try {
+            return await this.area.set({ [this.key]: folders });
+        } catch (e) {
+            console.warn('Storage: chrome.storage saveFolders failed', e);
+        }
     }
 
     /**
@@ -109,13 +174,75 @@ export default class  Storage {
     }
 
     async getFolderOrder() {
-        if (!chrome.runtime?.id) return [];
-        const data = await this.area.get('folderOrder');
-        return data.folderOrder || [];
+        if (!chrome.runtime?.id) {
+            if (typeof localStorage !== 'undefined') {
+                try {
+                    const stored = localStorage.getItem('folderOrder');
+                    if (stored) {
+                        const parsed = JSON.parse(stored);
+                        if (Array.isArray(parsed)) {
+                            return parsed;
+                        }
+                    }
+                } catch (e) {
+                    console.warn('Storage: localStorage getFolderOrder parse error', e);
+                }
+            }
+            return [];
+        }
+
+        try {
+            const data = await this.area.get('folderOrder');
+            const folderOrder = data.folderOrder || [];
+
+            if (Array.isArray(folderOrder) && folderOrder.length > 0) {
+                if (typeof localStorage !== 'undefined') {
+                    try {
+                        localStorage.setItem('folderOrder', JSON.stringify(folderOrder));
+                    } catch (e) {
+                        console.warn('Storage: localStorage setFolderOrder failed', e);
+                    }
+                }
+                return folderOrder;
+            }
+
+            if (typeof localStorage !== 'undefined') {
+                try {
+                    const stored = localStorage.getItem('folderOrder');
+                    if (stored) {
+                        const parsed = JSON.parse(stored);
+                        if (Array.isArray(parsed)) {
+                            await this.area.set({ folderOrder: parsed });
+                            return parsed;
+                        }
+                    }
+                } catch (e) {
+                    console.warn('Storage: localStorage getFolderOrder parse error', e);
+                }
+            }
+
+            return folderOrder;
+        } catch (e) {
+            console.warn('Storage: chrome.storage getFolderOrder failed', e);
+            return [];
+        }
     }
 
     async saveFolderOrder(order) {
+        if (typeof localStorage !== 'undefined') {
+            try {
+                localStorage.setItem('folderOrder', JSON.stringify(order));
+            } catch (e) {
+                console.warn('Storage: localStorage saveFolderOrder failed', e);
+            }
+        }
+
         if (!chrome.runtime?.id) return;
-        return this.area.set({ folderOrder: order });
+
+        try {
+            return await this.area.set({ folderOrder: order });
+        } catch (e) {
+            console.warn('Storage: chrome.storage saveFolderOrder failed', e);
+        }
     }
 }

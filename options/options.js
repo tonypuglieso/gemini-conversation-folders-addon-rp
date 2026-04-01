@@ -99,7 +99,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 const dataStr = JSON.stringify(folders, null, 2);
                 const dataBlob = new Blob([dataStr], { type: 'application/json' });
                 const url = URL.createObjectURL(dataBlob);
-                
+
                 const a = document.createElement('a');
                 a.href = url;
                 a.download = 'gemini_organizer_backup.json';
@@ -107,7 +107,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 a.click();
                 document.body.removeChild(a);
                 URL.revokeObjectURL(url);
-                
+
                 showStatus('Datos exportados exitosamente.', 'success');
             } catch (error) {
                 console.error('Error al exportar los datos:', error);

@@ -255,17 +255,6 @@ export default class RightPanel extends Component {
 
         this.initResizers();
 
-        if (this.dragAndDropHandler) {
-            this.element.querySelectorAll('.folder-card:not(.virtual-folder)').forEach(card => {
-                card.ondragover = this.dragAndDropHandler.handleDragOver.bind(this.dragAndDropHandler);
-                card.ondragleave = this.dragAndDropHandler.handleDragLeave.bind(this.dragAndDropHandler);
-                card.ondrop = async (e) => {
-                    await this.dragAndDropHandler.handleDrop(e);
-                    this.updateData();
-                };
-            });
-        }
-
         // Ensure persisted settings are applied after the UI is rendered
         this.applySettings();
     }
@@ -321,6 +310,28 @@ export default class RightPanel extends Component {
                 if (this.searchTerm && !folderName.toLowerCase().includes(this.searchTerm)) continue;
                 
                 grid.appendChild(this.renderFolderCard(folderName, this.lastData.folders[folderName].length, false, folderIdx++));
+            }
+
+            // Diagnostic logging for layout debugging (enable with `window.geminiOrganizerDebug = true`)
+            if (window.geminiOrganizerDebug) {
+                try {
+                    const rect = grid.getBoundingClientRect();
+                    const cs = window.getComputedStyle(grid);
+                    const template = cs.getPropertyValue('grid-template-columns') || '';
+                    const columnsCount = template.trim() ? template.trim().split(/\s+/).length : 0;
+                    console.log('RP-DIAG: #right-folders-grid', {
+                        width: rect.width,
+                        panelWidth: this.settings && this.settings.panelWidth ? this.settings.panelWidth : null,
+                        template,
+                        columnsCount,
+                        children: grid.children.length,
+                        gap: cs.getPropertyValue('gap') || cs.getPropertyValue('grid-column-gap') || cs.getPropertyValue('grid-row-gap'),
+                        padding: cs.getPropertyValue('padding'),
+                        boxSizing: cs.getPropertyValue('box-sizing')
+                    });
+                } catch (e) {
+                    console.warn('RP-DIAG: failed to read grid metrics', e);
+                }
             }
         }
 
@@ -444,6 +455,7 @@ export default class RightPanel extends Component {
         }
 
         this.setSafeHTML(div, `
+            ${isVirtual ? '' : `<span class="folder-drag-handle" title="Reordenar carpeta">⠿</span>`}
             <div class="folder-icon-wrapper">
                 ${isVirtual ? `<span class="folder-emoji-large">⚡</span>` : (emoji ? `<span class="folder-emoji-large">${emoji}</span>` : `
                 <span class="folder-emoji-large">📂</span>
@@ -466,17 +478,73 @@ export default class RightPanel extends Component {
             this.showEditFolderPanel(folderName);
         };
 
-        // Point 13: Drag Chat to Folder Drop Zone
-        div.ondragover = (e) => {
-            if (e.dataTransfer.types.includes('application/x-gemini-chat')) {
+        // Setup drag handle for folder reordering
+        const handle = div.querySelector('.folder-drag-handle');
+        if (handle && !isVirtual && !this.searchTerm) {
+            handle.draggable = true;
+            handle.addEventListener('dragstart', (event) => {
+                event.stopPropagation();
+                event.dataTransfer.effectAllowed = 'move';
+                event.dataTransfer.setData('application/x-folder-order', JSON.stringify({
+                    folderName,
+                    folderIndex: index
+                }));
+                div.classList.add('dragging');
+            });
+            handle.addEventListener('dragend', () => {
+                div.classList.remove('dragging');
+            });
+        }
+
+        // Point 13: Drag Chat and Folder Reordering
+        div.dataset.folderName = folderName;
+        div.dataset.folderIndex = String(index);
+
+        div.addEventListener('dragover', (e) => {
+            const types = Array.from(e.dataTransfer.types);
+            if (types.includes('application/x-gemini-chat') || types.includes('application/json') || types.includes('application/x-gemini-chats-bulk') || types.includes('application/x-folder-order')) {
                 e.preventDefault();
+                e.dataTransfer.dropEffect = 'move';
                 div.classList.add('drag-over');
             }
-        };
-        div.ondragleave = () => div.classList.remove('drag-over');
-        div.ondrop = async (e) => {
+            if (this.dragAndDropHandler && types.some(t => ['application/json', 'application/x-gemini-chat', 'application/x-gemini-chats-bulk'].includes(t))) {
+                this.dragAndDropHandler.handleDragOver(e);
+            }
+        });
+
+        div.addEventListener('dragleave', (e) => {
+            div.classList.remove('drag-over');
+            if (this.dragAndDropHandler) {
+                this.dragAndDropHandler.handleDragLeave(e);
+            }
+        });
+
+        div.addEventListener('drop', async (e) => {
             div.classList.remove('drag-over');
             e.preventDefault();
+
+            const folderOrderData = e.dataTransfer.getData('application/x-folder-order');
+            if (folderOrderData) {
+                try {
+                    const payload = JSON.parse(folderOrderData);
+                    const sourceIndex = parseInt(payload.folderIndex, 10);
+                    const targetIndex = parseInt(div.dataset.folderIndex, 10);
+                    if (!Number.isNaN(sourceIndex) && !Number.isNaN(targetIndex) && sourceIndex !== targetIndex && window.geminiOrganizerAppInstance) {
+                        await window.geminiOrganizerAppInstance.folderManager.reorderFolders(sourceIndex, targetIndex);
+                        await window.geminiOrganizerAppInstance.folderManager.loadAndDisplayFolders();
+                        this.updateData(window.geminiOrganizerAppInstance.folderManager.folders, window.geminiOrganizerAppInstance.folderManager.allUniqueConversations);
+                        return;
+                    }
+                } catch (err) {
+                    console.warn('RightPanel: Error parsing folder reorder payload', err);
+                }
+            }
+
+            if (this.dragAndDropHandler) {
+                await this.dragAndDropHandler.handleDrop(e);
+                this.updateData();
+                return;
+            }
 
             if (!window.geminiOrganizerAppInstance) return;
             const fm = window.geminiOrganizerAppInstance.folderManager;
@@ -499,7 +567,6 @@ export default class RightPanel extends Component {
                 }
             }
 
-            // Legacy fallback
             if (ids.length === 0) {
                 const chatId = e.dataTransfer.getData('application/x-gemini-chat');
                 const bulkIds = e.dataTransfer.getData('application/x-gemini-chats-bulk');
@@ -511,15 +578,13 @@ export default class RightPanel extends Component {
             }
 
             if (ids.length > 0) {
-                // Enviar la lista de ids a carpeta de destino, con source
                 await fm.moveConversationsToFolder(ids, sourceFolder, folderName);
                 this.updateData();
                 showToast(`${ids.length} chat${ids.length > 1 ? 's' : ''} movido${ids.length > 1 ? 's' : ''} a ${folderName}`, 'success');
                 return;
             }
 
-            // Fallback específico: agregar manualmente si no hay move path
-            if (ids.length === 0 && conversations.length > 0) {
+            if (conversations.length > 0) {
                 for (const conv of conversations) {
                     await fm.addConversationToFolder(folderName, {
                         id: conv.id,
@@ -530,9 +595,8 @@ export default class RightPanel extends Component {
                 this.updateData();
                 showToast(`${conversations.length} chat${conversations.length > 1 ? 's' : ''} movido${conversations.length > 1 ? 's' : ''} a ${folderName}`, 'success');
             }
-        };
+        });
 
-        
         div.onclick = (e) => {
             if (e.target.closest('.card-action-btn')) return;
             this.currentFolderView = folderName;

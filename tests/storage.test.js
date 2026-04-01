@@ -26,9 +26,18 @@ global.localStorage = {
 describe('Storage', () => {
     let storage;
 
+    beforeAll(() => {
+        if (global.localStorage && global.localStorage._store) {
+            global.localStorage._store = {};
+        }
+    });
+
     beforeEach(() => {
         storage = new Storage('testKey');
         jest.clearAllMocks();
+        if (global.localStorage && global.localStorage._store) {
+            global.localStorage._store = {}; 
+        }
     });
 
     test('should set storage area to local', async () => {
@@ -52,10 +61,15 @@ describe('Storage', () => {
     });
 
     test('should return empty object if no folders found', async () => {
+        // Ensure we are not reusing state from previous tests in localStorage fallback path.
+        localStorage._store = {};
+        localStorage.removeItem('testKey');
+
         await storage.setStorageArea('local');
         chrome.storage.local.get.mockResolvedValue({});
 
         const folders = await storage.getFolders();
+        expect(localStorage.getItem('testKey')).toBeNull();
         expect(folders).toEqual({});
     });
 

@@ -174,6 +174,7 @@ if (window.geminiOrganizerAppInstance) {
            console.log("Gemini Organizer: Re-inyectando botón izquierdo.");
            await this.ui.addToggleButton(this.eventHandler, this.folderManager);
            this.updateSidebarSyncStatus();
+            await this.folderManager.loadAndDisplayFolders();
         }
 
         if (!rightPanel || !document.body.contains(rightPanel)) {
